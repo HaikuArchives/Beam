@@ -38,8 +38,8 @@ BmBusyView::BmBusyView( BPoint leftTop)
 	,	mBusyCount( 0)
 	,	mCurrState( 0)
 {
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
-	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor( B_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor( B_PANEL_BACKGROUND_COLOR);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,10 +150,10 @@ void BmBusyView::Pulse() {
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Draw( BRect) {
 	BRect r = Bounds();
-	SetHighColor( ui_color( B_UI_SHINE_COLOR));
+	SetHighColor( ui_color( B_SHINE_COLOR));
 	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
-	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 	StrokeLine( r.LeftTop(), r.RightTop());
 	StrokeLine( r.RightTop(), r.RightBottom());
 	StrokeLine( r.LeftBottom(), r.RightBottom());
@@ -167,19 +167,19 @@ void BmBusyView::Draw( BRect) {
 	}
 	r.InsetBy( 1.0, 1.0);
 	r.top++;
-	SetHighColor( ui_color( B_UI_CONTROL_BACKGROUND_COLOR));
+	SetHighColor( ui_color( B_CONTROL_BACKGROUND_COLOR));
 	StrokeEllipse( r);
 	r.InsetBy( 1.0, 1.0);
 	float start = 0;
 	float end = float(mCurrState % 360);
 	SetHighColor( (mCurrState / 360) % 2 
-		? ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR)
-		: ui_color( B_UI_CONTROL_BACKGROUND_COLOR)
+		? ui_color( B_CONTROL_HIGHLIGHT_COLOR)
+		: ui_color( B_CONTROL_BACKGROUND_COLOR)
 	);
 	FillArc( r, end, 359.0);
 	SetHighColor( (mCurrState / 360) % 2 
-		? ui_color( B_UI_CONTROL_BACKGROUND_COLOR)
-		: ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR)
+		? ui_color( B_CONTROL_BACKGROUND_COLOR)
+		: ui_color( B_CONTROL_HIGHLIGHT_COLOR)
 	);
 	FillArc( r, start, end);
 }

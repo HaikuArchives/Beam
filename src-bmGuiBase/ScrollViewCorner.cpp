@@ -35,15 +35,15 @@ void ScrollViewCorner::Draw(BRect Update)
 {
 	SetHighColor(
 		tint_color( 
-			ui_color( B_UI_PANEL_BACKGROUND_COLOR), 
+			ui_color( B_PANEL_BACKGROUND_COLOR), 
 			m_enabled ? B_NO_TINT : B_DISABLED_MARK_TINT
 		)
 	);
 	FillRect(BRect(2.0, 2.0, B_V_SCROLL_BAR_WIDTH-1, B_H_SCROLL_BAR_HEIGHT-1));
-	SetHighColor( ui_color( B_UI_SHINE_COLOR));
+	SetHighColor( ui_color( B_SHINE_COLOR));
 	StrokeLine(BPoint(1.0, 1.0), BPoint(B_V_SCROLL_BAR_WIDTH-1, 1.0));
 	StrokeLine(BPoint(1.0, 1.0), BPoint(1.0, B_H_SCROLL_BAR_HEIGHT-1));
-	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 	StrokeRect(Bounds());
 }
 

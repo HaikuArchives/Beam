@@ -110,9 +110,9 @@ BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	:	inherited(frame, "FieldTitleView", B_FOLLOW_NONE, B_WILL_DRAW)
 	,	mAddrList(addrList)
 {
-	SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
-	SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
-	SetHighColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 4));
+	SetViewColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 2));
+	SetLowColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 2));
+	SetHighColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 4));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -320,7 +320,7 @@ void BmMailHeaderView::BmMailHeaderFieldView
 			const BmAddressList* addrList,
 			BFont* font, float fixedWidth, float titleWidth)
 {
-	SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
+	SetViewColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 2));
 	const float leftOffs = 15;
 	const float textInset = 1;
 	font->SetFace( B_BOLD_FACE);
@@ -347,9 +347,9 @@ void BmMailHeaderView::BmMailHeaderFieldView
 															B_FOLLOW_NONE, B_WILL_DRAW);
 	mContentView->MakeSelectable( true);
 	mContentView->SetFont( font);
-	mContentView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
-	mContentView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 1));
-	mContentView->SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 1));
+	mContentView->SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
+	mContentView->SetViewColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 1));
+	mContentView->SetLowColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 1));
 	AddChild( mContentView);
 	float neededHeight = mContentView->TextHeight()+2*textInset;
 	ResizeTo( fixedWidth, neededHeight);

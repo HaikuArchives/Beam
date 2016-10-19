@@ -360,7 +360,7 @@ float BmResources::FontLineHeight( const BFont* font) {
 BPicture* BmResources::CreatePictureFor( BBitmap* image, 
 													  float width, float height,
 													  bool transparentBack,
-													  const char* backgroundCol,
+													  color_which backgroundCol,
 													  BmPicFrameType frameType,
 													  float offset) {
 	BPicture* picture = new BPicture();
@@ -376,11 +376,11 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image,
 		view->FillRect( r, B_SOLID_LOW);
 	}
 	if (frameType == BmPicFrame_ActionButton) {
-		view->SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+		view->SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 		view->StrokeLine( r.RightTop(), r.RightBottom());
 		view->StrokeLine( r.LeftTop(), r.LeftBottom());
 		view->StrokeLine( r.LeftBottom(), r.RightBottom());
-		view->SetHighColor( ui_color( B_UI_SHINE_COLOR));
+		view->SetHighColor( ui_color( B_SHINE_COLOR));
 		view->StrokeLine( BPoint(1.0,0.0), BPoint(r.right-1,0.0));
 		view->StrokeLine( BPoint(1.0,0.0), BPoint(1.0,r.bottom));
 	}

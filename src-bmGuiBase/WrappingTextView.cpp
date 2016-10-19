@@ -142,9 +142,9 @@ WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resi
 	m_separator_chars = " ";			// just a default, will be overridden by Beam-Prefs
 	ResetTextRect();
 
-	SetViewUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
-	SetLowUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
-	SetHighUIColor(B_UI_DOCUMENT_TEXT_COLOR);														
+	SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+	SetLowUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+	SetHighUIColor(B_DOCUMENT_TEXT_COLOR);														
 }	
 
 

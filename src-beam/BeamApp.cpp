@@ -577,7 +577,7 @@ int32 PrintMails( void* data) {
 				mailRef = (*refVect)[mailIdx].Get();
 				if (mailView->LockLooper()) {
 					mailView->BodyPartView()->SetViewColor( 
-						ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
+						ui_color( B_DOCUMENT_BACKGROUND_COLOR)
 					);
 					mailView->ShowMail( mailRef, false);
 					mailView->UnlockLooper();

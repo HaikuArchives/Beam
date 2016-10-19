@@ -23,7 +23,7 @@ BmCaption::BmCaption( BRect frame, const char* text)
 	,	mHighlight(false)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
-	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor( B_PANEL_BACKGROUND_COLOR);
 	BFont captionFont( *be_plain_font);
 	float captionFontSize = be_plain_font->Size();
 	if (captionFontSize > 12)
@@ -75,16 +75,16 @@ void BmCaption::Draw( BRect updateRect) {
 		}
 	}
 	else
-		SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+		SetLowColor( ui_color( B_PANEL_BACKGROUND_COLOR));
 #ifndef __HAIKU__
 	FillRect( r.InsetByCopy(1.0, 1.0), B_SOLID_LOW);
 #else
 	FillRect( BRect(r.top + 1, r.left + 1, r.right, r.bottom - 1), B_SOLID_LOW);
 #endif
-	SetHighColor( ui_color( B_UI_SHINE_COLOR));
+	SetHighColor( ui_color( B_SHINE_COLOR));
 	StrokeLine( BPoint(0.0,1.0), BPoint(r.right,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
-	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 	if (BeamOnDano)
 		StrokeLine( r.RightTop(), r.RightBottom());
 #ifndef __HAIKU__
@@ -95,7 +95,7 @@ void BmCaption::Draw( BRect updateRect) {
 	StrokeLine( r.LeftTop(), r.RightTop());
 	StrokeLine( r.LeftBottom(), r.RightBottom());
 
-	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
 	font_height fInfo;
 	BFont captionFont;
 	GetFont(&captionFont);

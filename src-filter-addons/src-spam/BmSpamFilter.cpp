@@ -997,8 +997,7 @@ void BmSpamFilter::OsbfClassifier
 \********************************************************************************/
 // #pragma mark --- OsbfClassifier ---
 
-BmSpamFilter::OsbfClassifier 
-BmSpamFilter::nClassifier = BmSpamFilter::OsbfClassifier();
+BmSpamFilter::OsbfClassifier BmSpamFilter::nClassifier;
 
 unsigned char 
 BmSpamFilter::OsbfClassifier

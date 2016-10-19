@@ -65,12 +65,12 @@ fFullItemList(32),
 fExpanderColumn( -1),
 fCompare( NULL),
 fWatchingForDrag( false),
-fSelectedItemColorWindowActive( ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR)),
-fSelectedItemColorWindowInactive( ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR)),
-fSelectedItemColorTintedWindowActive( BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1)),
-fSelectedItemColorTintedWindowInactive( BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1)),
-fDarkColumnCol( BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 1)),
-fLightColumnCol( ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)),
+fSelectedItemColorWindowActive( ui_color( B_MENU_SELECTED_BACKGROUND_COLOR)),
+fSelectedItemColorWindowInactive( ui_color( B_MENU_SELECTED_BACKGROUND_COLOR)),
+fSelectedItemColorTintedWindowActive( BmWeakenColor( B_MENU_SELECTED_BACKGROUND_COLOR, 1)),
+fSelectedItemColorTintedWindowInactive( BmWeakenColor( B_MENU_SELECTED_BACKGROUND_COLOR, 1)),
+fDarkColumnCol( BmWeakenColor( B_DOCUMENT_BACKGROUND_COLOR, 1)),
+fLightColumnCol( ui_color( B_DOCUMENT_BACKGROUND_COLOR)),
 fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
@@ -111,12 +111,12 @@ ColumnListView::~ColumnListView()
 
 // for Zeta only, react on color changes:
 status_t ColumnListView::UISettingsChanged(const BMessage* changes, uint32 flags) {
-	fSelectedItemColorWindowActive = ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR);
-	fSelectedItemColorWindowInactive = ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR);
-	fSelectedItemColorTintedWindowActive = BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
-	fSelectedItemColorTintedWindowInactive = BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
-	fDarkColumnCol = BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 1);
-	fLightColumnCol = ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR);
+	fSelectedItemColorWindowActive = ui_color( B_MENU_SELECTED_BACKGROUND_COLOR);
+	fSelectedItemColorWindowInactive = ui_color( B_MENU_SELECTED_BACKGROUND_COLOR);
+	fSelectedItemColorTintedWindowActive = BmWeakenColor( B_MENU_SELECTED_BACKGROUND_COLOR, 1);
+	fSelectedItemColorTintedWindowInactive = BmWeakenColor( B_MENU_SELECTED_BACKGROUND_COLOR, 1);
+	fDarkColumnCol = BmWeakenColor( B_DOCUMENT_BACKGROUND_COLOR, 1);
+	fLightColumnCol = ui_color( B_DOCUMENT_BACKGROUND_COLOR);
 	Invalidate();
 	return B_OK;
 }

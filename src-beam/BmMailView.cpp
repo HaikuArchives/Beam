@@ -264,9 +264,9 @@ BmMailView::BmMailView( BRect frame, bool outbound)
 	}
 	CalculateVerticalOffset();
 
-	SetViewUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
-	SetLowUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
-	SetHighUIColor(B_UI_DOCUMENT_TEXT_COLOR);														
+	SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+	SetLowUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+	SetHighUIColor(B_DOCUMENT_TEXT_COLOR);														
 }
 
 /*------------------------------------------------------------------------------*\
@@ -686,10 +686,10 @@ void BmMailView::SetSignatureByName( const BmString sigName) {
 	textRunArray->count = 2;
 	textRunArray->runs[0].offset = 0;
 	textRunArray->runs[0].font = mFont;
-	textRunArray->runs[0].color = ui_color(B_UI_DOCUMENT_TEXT_COLOR);
+	textRunArray->runs[0].color = ui_color(B_DOCUMENT_TEXT_COLOR);
 	textRunArray->runs[1].offset = text.Length();
 	textRunArray->runs[1].font = mFont;
-	textRunArray->runs[1].color = BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2);
+	textRunArray->runs[1].color = BmWeakenColor(B_DOCUMENT_TEXT_COLOR,2);
 	BmString sig = TheSignatureList->GetSignatureStringFor( sigName);
 	int32 lastTextPos = max_c( (long)0, text.Length()-1);
 	if (sig.Length())
@@ -876,7 +876,7 @@ void BmMailView::JobIsDone( bool completed) {
 											? mCurrMail->RawText().Length()
 											: 65536);
 		mTextRunMap.clear();
-		mTextRunMap[0] = BmTextRunInfo( ui_color(B_UI_DOCUMENT_TEXT_COLOR));
+		mTextRunMap[0] = BmTextRunInfo( ui_color(B_DOCUMENT_TEXT_COLOR));
 		BmBodyPartList* body = mCurrMail->Body();
 		mClickedTextRun = mTextRunMap.end();
 		if (mRulerView)
@@ -913,10 +913,10 @@ void BmMailView::JobIsDone( bool completed) {
 						displayBuf << "\n";
 					if ((mHighlightFlags & HIGHLIGHT_SIG) > 0)
 						mTextRunMap[displayBuf.CurrPos()] 
-							= BmTextRunInfo(BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2));
+							= BmTextRunInfo(BmWeakenColor(B_DOCUMENT_TEXT_COLOR,2));
 					else
 						mTextRunMap[displayBuf.CurrPos()] 
-							= BmTextRunInfo(ui_color(B_UI_DOCUMENT_TEXT_COLOR));
+							= BmTextRunInfo(ui_color(B_DOCUMENT_TEXT_COLOR));
 					// signature within body is already in UTF8-encoding, so we
 					// just add it to out display-text:
 					displayBuf << "-- \n" << body->Signature();
@@ -938,7 +938,7 @@ void BmMailView::JobIsDone( bool completed) {
 						BmTextRunIter iter = TextRunInfoAt( start);
 						BmTextRunInfo runInfo = iter->second;
 						mTextRunMap[start] = BmTextRunInfo( 
-							ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR), true
+							ui_color( B_CONTROL_HIGHLIGHT_COLOR), true
 						);
 						mTextRunMap[end] = runInfo;
 					}
@@ -1330,7 +1330,7 @@ BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target)
 					  BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_BUSYVIEW
 					  | BM_SV_CAPTION, "12345678901234567890")
 {
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor( B_PANEL_BACKGROUND_COLOR);
 	ct_mpm = minmax;
 }
 

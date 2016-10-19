@@ -806,7 +806,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				}
 				mMinutesLabel->SetHighColor( 
 					tint_color( 
-						ui_color( B_UI_PANEL_TEXT_COLOR), 
+						ui_color( B_PANEL_TEXT_COLOR), 
 						val ? B_NO_TINT: B_DISABLED_MARK_TINT
 					)
 				);
@@ -826,7 +826,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					}
 					mDaysLabel->SetHighColor(
 						tint_color( 
-							ui_color( B_UI_PANEL_TEXT_COLOR), 
+							ui_color( B_PANEL_TEXT_COLOR), 
 							val ? B_NO_TINT: B_DISABLED_MARK_TINT
 						)
 					);
@@ -1132,10 +1132,10 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mCheckIntervalControl->SetEnabled( false);
 		mDeleteMailDelayControl->SetEnabled( false);
 		mMinutesLabel->SetHighColor( 
-			tint_color( ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
+			tint_color( ui_color( B_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
 		);
 		mDaysLabel->SetHighColor(
-			tint_color( ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
+			tint_color( ui_color( B_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
 		);
 		mClientCertControl->SetTextSilently( "");
 		mAcceptedCertControl->SetTextSilently( "");
@@ -1208,7 +1208,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 					);
 					mMinutesLabel->SetHighColor( 
 						tint_color( 
-							ui_color( B_UI_PANEL_TEXT_COLOR),
+							ui_color( B_PANEL_TEXT_COLOR),
 							mCurrAcc->CheckInterval()>0 
 								? B_NO_TINT 
 								: B_DISABLED_MARK_TINT
@@ -1219,7 +1219,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 					);
 					mDaysLabel->SetHighColor( 
 						tint_color( 
-							ui_color( B_UI_PANEL_TEXT_COLOR),
+							ui_color( B_PANEL_TEXT_COLOR),
 							mCurrAcc->DeleteMailFromServer()
 								? B_NO_TINT 
 								: B_DISABLED_MARK_TINT

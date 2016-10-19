@@ -55,7 +55,7 @@ public:
 	//
 	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
 										 bool transparentBack = false,
-										 const char* backgrounCol = B_UI_PANEL_BACKGROUND_COLOR,
+										 color_which backgrounCol = B_PANEL_BACKGROUND_COLOR,
 										 BmPicFrameType frameType = BmPicFrame_None,
 										 float offset = 0.0);
 	//

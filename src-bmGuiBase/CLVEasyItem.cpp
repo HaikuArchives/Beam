@@ -242,7 +242,7 @@ void CLVEasyItem::DrawColumn(BRect item_column_rect, int32 column_index,
 	if (HighlightTop()) {
 		BRect highlightRect( item_column_rect.left, 0,
 									item_column_rect.right, 1);
-		fOwner->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
+		fOwner->SetHighColor( ui_color( B_CONTROL_HIGHLIGHT_COLOR));
 		fOwner->FillRect( highlightRect);
 	}
 
@@ -251,14 +251,14 @@ void CLVEasyItem::DrawColumn(BRect item_column_rect, int32 column_index,
 									item_column_rect.bottom-1,
 									item_column_rect.right, 
 									item_column_rect.bottom);
-		fOwner->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
+		fOwner->SetHighColor( ui_color( B_CONTROL_HIGHLIGHT_COLOR));
 		fOwner->FillRect( highlightRect);
 	}
 
 	if(type == CLV_COLTYPE_STATICTEXT || type == CLV_COLTYPE_USERTEXT)
 	{
 		const char* text = NULL;
-		fOwner->SetHighColor( ui_color( B_UI_DOCUMENT_TEXT_COLOR));
+		fOwner->SetHighColor( ui_color( B_DOCUMENT_TEXT_COLOR));
 		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
 		else if(type == CLV_COLTYPE_USERTEXT)

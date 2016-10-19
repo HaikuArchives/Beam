@@ -29,7 +29,7 @@ BmRulerView::BmRulerView( const BFont& font)
 	,	mIndicatorGrabbed( false)
 	,	mSingleCharWidth( font.StringWidth( MEDIUM_WIDTH_CHAR))
 {
-	SetViewColor( BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 2));
+	SetViewColor( BmWeakenColor( B_DOCUMENT_BACKGROUND_COLOR, 2));
 	BFont fnt( be_plain_font);
 	fnt.SetSize( 8);
 	SetFont( &fnt);
@@ -109,7 +109,7 @@ void BmRulerView::Draw( BRect bounds) {
 	float xPos = nXOffset+float(mIndicatorPos)*mSingleCharWidth;
 	float yPos = r.bottom-10;
 	SetHighColor( 
-		BmWeakenColor( B_UI_CONTROL_HIGHLIGHT_COLOR, mIndicatorGrabbed ? 0 : 2)
+		BmWeakenColor( B_CONTROL_HIGHLIGHT_COLOR, mIndicatorGrabbed ? 0 : 2)
 	);
 	if (ThePrefs->GetBool( "HardWrapMailText")) {
 		FillTriangle( BPoint( xPos-5, yPos),

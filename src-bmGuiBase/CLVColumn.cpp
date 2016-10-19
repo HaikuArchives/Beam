@@ -387,9 +387,9 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 	{
 		const float offs = 4.0;
 		if(focus)
-			BmSetHighUIColor( view, B_UI_NAVIGATION_BASE_COLOR);
+			view->SetHighUIColor( B_NAVIGATION_BASE_COLOR);
 		else
-			BmSetHighUIColor( view, B_UI_PANEL_TEXT_COLOR);
+			view->SetHighUIColor( B_PANEL_TEXT_COLOR);
 	
 		//Draw the label
 		view->SetDrawingMode(B_OP_OVER);
@@ -412,11 +412,11 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 			float Width = view->StringWidth(label);
 			rgb_color lashCol;
 			if (sortPrio == 0)
-				lashCol = ui_color( B_UI_PANEL_TEXT_COLOR);
+				lashCol = ui_color( B_PANEL_TEXT_COLOR);
 			else if (sortPrio == 1)
-				lashCol = BmWeakenColor( B_UI_PANEL_TEXT_COLOR, 1);
+				lashCol = BmWeakenColor( B_PANEL_TEXT_COLOR, 1);
 			else
-				lashCol = BmWeakenColor( B_UI_PANEL_TEXT_COLOR, 2);
+				lashCol = BmWeakenColor( B_PANEL_TEXT_COLOR, 2);
 			view->SetHighColor( lashCol);
 			float x_offs, y_offs;
 			if (header_rect.right-header_rect.left-Width > 18) {

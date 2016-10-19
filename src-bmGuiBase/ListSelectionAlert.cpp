@@ -155,9 +155,9 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	sel_list_rect.right += B_V_SCROLL_BAR_WIDTH;
 	sel_list_rect.bottom += B_H_SCROLL_BAR_HEIGHT;
 
-	m_list_view = new ColumnListView( sel_list_rect, NULL, 
-												 B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-												 B_SINGLE_SELECTION_LIST, true, true);
+	m_list_view = new ColumnListView( sel_list_rect, NULL,
+			B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+			B_SINGLE_SELECTION_LIST, true, true);
 
 	m_list_view->SetMinItemHeight( 18);
 

@@ -262,13 +262,13 @@ void BmToolbarButton::Draw( BRect updateRect) {
 		// draw higlighting border
 		BeginLineArray(4);
 		AddLine( rect.LeftBottom(), rect.LeftTop(), 
-					ui_color( B_UI_SHINE_COLOR));
+					ui_color( B_SHINE_COLOR));
 		AddLine( rect.LeftTop(), rect.RightTop(), 
-					ui_color( B_UI_SHINE_COLOR));
+					ui_color( B_SHINE_COLOR));
 		AddLine( rect.LeftBottom(), rect.RightBottom(), 
-					BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+					BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 		AddLine( rect.RightBottom(), rect.RightTop(), 
-					BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+					BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 		EndLineArray();
 	}
 #endif
@@ -378,9 +378,9 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 	drawImage->Lock();
 	BPicture* picture = new BPicture();
 	view->BeginPicture( picture);
-	view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	view->SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
 	view->SetViewColor( B_TRANSPARENT_COLOR);
-	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	view->SetLowColor( ui_color( B_PANEL_BACKGROUND_COLOR));
 
 #ifndef __HAIKU__
 	BmToolbar* toolbar = dynamic_cast<BmToolbar*>(Parent()->Parent());
@@ -395,13 +395,13 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 		rect.InsetBy( 1, 1);
 		view->BeginLineArray(4);
 		view->AddLine( rect.LeftBottom(), rect.LeftTop(), 
-							BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+							BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 		view->AddLine( rect.LeftTop(), rect.RightTop(), 
-							BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+							BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 		view->AddLine( rect.LeftBottom(), rect.RightBottom(), 
-							ui_color( B_UI_SHINE_COLOR));
+							ui_color( B_SHINE_COLOR));
 		view->AddLine( rect.RightBottom(), rect.RightTop(), 
-							ui_color( B_UI_SHINE_COLOR));
+							ui_color( B_SHINE_COLOR));
 		view->EndLineArray();
 	}
 #endif
@@ -442,7 +442,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 		be_plain_font->GetHeight( &fh);
 		view->SetFont( &font);
 		view->SetDrawingMode(B_OP_OVER);
-		view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+		view->SetLowColor( ui_color( B_PANEL_BACKGROUND_COLOR));
 		if (mode == STATE_ON)
 			view->DrawString( label, posLabel+BPoint(1,fh.ascent+2));
 		else

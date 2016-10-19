@@ -264,13 +264,13 @@ void BmDefaultChoiceView::ListItem
 {
 	rgb_color textCol, backCol, matchCol;
 	if (IsSelected()) {
-		textCol = ui_color(B_UI_MENU_SELECTED_ITEM_TEXT_COLOR);
-		backCol = ui_color(B_UI_MENU_SELECTED_BACKGROUND_COLOR);
-		matchCol = BmWeakenColor(B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
+		textCol = ui_color(B_MENU_SELECTED_ITEM_TEXT_COLOR);
+		backCol = ui_color(B_MENU_SELECTED_BACKGROUND_COLOR);
+		matchCol = BmWeakenColor(B_MENU_SELECTED_BACKGROUND_COLOR, 1);
 	} else {
-		textCol = ui_color(B_UI_DOCUMENT_TEXT_COLOR);
-		backCol = ui_color(B_UI_DOCUMENT_BACKGROUND_COLOR);
-		matchCol = BmWeakenColor(B_UI_DOCUMENT_BACKGROUND_COLOR, 1);
+		textCol = ui_color(B_DOCUMENT_TEXT_COLOR);
+		backCol = ui_color(B_DOCUMENT_BACKGROUND_COLOR);
+		matchCol = BmWeakenColor(B_DOCUMENT_BACKGROUND_COLOR, 1);
 	}
 	BFont font;
 	font_height fontHeight;

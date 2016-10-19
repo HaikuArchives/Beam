@@ -582,11 +582,11 @@ void BmMailRefView::AttachedToWindow()
 		BBitmap* unlocked = unlockedIconHandle->bitmap;
 		BPicture* lockedPicture = TheResources->CreatePictureFor(
 			locked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
-			B_UI_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
+			B_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
 		);
 		BPicture* unlockedPicture = TheResources->CreatePictureFor(
 			unlocked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
-			B_UI_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
+			B_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
 		);
 		BPictureButton* lockLabelsButton = new BPictureButton(
 			BRect(0,0,B_V_SCROLL_BAR_WIDTH,labelViewHeight-1), "lockLabelsButton", 

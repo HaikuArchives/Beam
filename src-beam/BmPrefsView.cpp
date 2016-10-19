@@ -88,9 +88,9 @@ void BmPrefsView::Initialize() {
 	if (mLabelView) {
 		BFont font = *be_bold_font;
 		mLabelView->SetFont( &font);
-		BmSetViewUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);
-		BmSetLowUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);
-		BmSetHighUIColor( mLabelView, B_UI_CONTROL_BACKGROUND_COLOR);
+		mLabelView->SetViewUIColor( B_CONTROL_HIGHLIGHT_COLOR);
+		mLabelView->SetLowUIColor( B_CONTROL_HIGHLIGHT_COLOR);
+		mLabelView->SetHighUIColor( B_CONTROL_BACKGROUND_COLOR);
 	}
 	layoutprefs();
 	layout( Bounds());

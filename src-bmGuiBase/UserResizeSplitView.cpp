@@ -43,7 +43,7 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left,
 	m_move_slider_on_frame_resize = move_slider_on_frame_resize;
 	m_dragging = false;
 	m_have_clamped_to_limits = false;
-	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
 	m_left_or_top = top_or_left;
 	if (top_or_left)
 		ct_mpm = top_or_left->ct_mpm;
@@ -260,8 +260,8 @@ void UserResizeSplitView::Draw(BRect updateRect)
 	const float dist = 3;
 	const float count 
 		= floorf((m_posture == B_HORIZONTAL ? b.Width() : b.Height()) / dist);
-	rgb_color lightColor = ui_color(B_UI_SHINE_COLOR);
-	rgb_color darkColor = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
+	rgb_color lightColor = ui_color(B_SHINE_COLOR);
+	rgb_color darkColor = BmWeakenColor( B_SHADOW_COLOR, 3);
 	BeginLineArray(int32(count*2));
 	float x = m_posture == B_HORIZONTAL ? 2 : m_divider_left_or_top + 1;
 	float y = m_posture == B_HORIZONTAL ? m_divider_left_or_top + 1 : 2;

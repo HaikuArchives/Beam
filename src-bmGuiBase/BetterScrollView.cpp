@@ -88,7 +88,7 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	else
 		mScrollViewCorner = NULL;
 
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor( B_PANEL_BACKGROUND_COLOR);
 	BRect frame;
 	BPoint LT;
 	if (mHScroller)
@@ -246,7 +246,7 @@ void BetterScrollView::Draw( BRect rect) {
 #else
 	else {
 		BRect bounds = Bounds();
-		SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+		SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 		StrokeRect( bounds.InsetByCopy(1, 1));
 	}
 #endif
@@ -255,7 +255,7 @@ void BetterScrollView::Draw( BRect rect) {
 		rgb_color color = 
 			IsFocus() || mTarget->IsFocus() 
 				? keyboard_navigation_color()
-				: ui_color(B_UI_PANEL_BACKGROUND_COLOR);
+				: ui_color(B_PANEL_BACKGROUND_COLOR);
 		if (mHScroller && mVScroller && !mScrollViewCorner) {
 			BPoint lb( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom);
 			BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
@@ -265,7 +265,7 @@ void BetterScrollView::Draw( BRect rect) {
 			if (BeamOnDano) {
 				// draw inner border (only left and top part, as the other
 				// parts are drawn by scrollbars anyway):
-				SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+				SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 				BRect border = bounds.InsetByCopy(1.0, 1.0);
 				StrokeLine( border.LeftTop(), border.RightTop());
 				StrokeLine( border.LeftTop(), border.LeftBottom());
@@ -282,7 +282,7 @@ void BetterScrollView::Draw( BRect rect) {
 			StrokeRect( bounds);
 			if (BeamOnDano) {
 				// draw inner border:
-				SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+				SetHighColor( BmWeakenColor( B_SHADOW_COLOR, BeShadowMod));
 				StrokeRect( bounds.InsetByCopy(1.0, 1.0));
 			}
 		}

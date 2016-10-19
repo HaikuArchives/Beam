@@ -16,8 +16,8 @@
 DeepBevelView::DeepBevelView(BRect frame, const char* name, uint32 resize_mask, uint32 flags)
 : BView(frame,name,resize_mask,flags)
 {
-	m_background_color = ui_color(B_UI_PANEL_BACKGROUND_COLOR);
-	m_dark_1_color = BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2);
+	m_background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
+	m_dark_1_color = BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 2);
 	m_cached_bounds = Bounds();
 }
 
@@ -29,12 +29,12 @@ void DeepBevelView::Draw(BRect)
 		m_cached_bounds.top));
 	StrokeLine(BPoint(m_cached_bounds.left,m_cached_bounds.top+1),BPoint(m_cached_bounds.left,
 		m_cached_bounds.bottom));
-	SetHighColor( ui_color( B_UI_SHINE_COLOR));
+	SetHighColor( ui_color( B_SHINE_COLOR));
 	StrokeLine(BPoint(m_cached_bounds.right,m_cached_bounds.top+1),BPoint(m_cached_bounds.right,
 		m_cached_bounds.bottom-1));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.bottom),BPoint(m_cached_bounds.right,
 		m_cached_bounds.bottom));
-	SetHighColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+	SetHighColor( BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.top+1),BPoint(m_cached_bounds.right-1,
 		m_cached_bounds.top+1));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.top+2),BPoint(m_cached_bounds.left+1,

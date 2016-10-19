@@ -567,17 +567,17 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 	dummyView->FillRect( dragRect);
 	dummyView->SetDrawingMode( B_OP_ALPHA);
 	dummyView->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_COMPOSITE);
-	rgb_color tcol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
+	rgb_color tcol = ui_color( B_PANEL_BACKGROUND_COLOR);
 	tcol.alpha = 192;
 	dummyView->SetHighColor( tcol);
 	dummyView->FillRoundRect( dragRect, 5, 5);
-	tcol = BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 3);
+	tcol = BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 3);
 	tcol.alpha = 192;
 	dummyView->SetHighColor( tcol);
 	dummyView->SetPenSize( 2);
 	dummyView->StrokeRoundRect( dragRect, 5, 5);
 	dummyView->SetPenSize( 1);
-	dummyView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	dummyView->SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
 	dragRect.InsetBy(h,v);
 	BRegion region;
 	// now we add all selected items to drag-image and to drag-msg:

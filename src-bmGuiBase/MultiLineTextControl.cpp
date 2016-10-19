@@ -67,7 +67,7 @@ MultiLineTextControl::MultiLineTextControl(BRect frame, const char* name, const 
 		m_entry_text_rect = Bounds();
 		m_entry_text_rect.top = m_label_text_rect.bottom+3;
 	}
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor( B_PANEL_BACKGROUND_COLOR);
 	m_text_view = new MultiLineTextControlTextView(m_entry_text_rect.InsetByCopy(2,2),flags, resizing_mode);
 	if(text)
 		m_text_view->SetText(text);
@@ -124,7 +124,7 @@ void MultiLineTextControl::ReevaluateLabelRect()
 void MultiLineTextControl::SetEnabled( bool enabled) {
 	m_enabled = enabled;
 	BControl::SetEnabled( enabled);
-	m_text_view->SetViewColor( BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 
+	m_text_view->SetViewColor( BmWeakenColor( B_DOCUMENT_BACKGROUND_COLOR, 
 															enabled ? 0 : 1));
 	m_text_view->MakeEditable( enabled);
 	MakeFocus( false);
@@ -139,7 +139,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 		return;
 	if (m_enabled) {
 		if(update_rect.Intersects(m_label_text_rect) && Label()) {
-			SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+			SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
 			DrawString(Label(),BPoint(m_label_text_rect.left,m_label_text_rect.top+m_label_font_ascent));
 		}
 		if(update_rect.Intersects(m_entry_text_rect))
@@ -150,7 +150,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.top));
 			StrokeLine(BPoint(m_entry_text_rect.left,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.left,m_entry_text_rect.bottom));
-			SetHighColor( ui_color( B_UI_SHINE_COLOR));
+			SetHighColor( ui_color( B_SHINE_COLOR));
 			StrokeLine(BPoint(m_entry_text_rect.right,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom-1));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.bottom),
@@ -174,7 +174,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 		if(update_rect.Intersects(m_label_text_rect) && Label()) {
 			SetHighColor( 
 				tint_color( 
-					ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT
+					ui_color( B_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT
 				)
 			);
 			DrawString(Label(),BPoint(m_label_text_rect.left,m_label_text_rect.top+m_label_font_ascent));
@@ -187,13 +187,13 @@ void MultiLineTextControl::Draw(BRect update_rect)
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.top));
 			StrokeLine(BPoint(m_entry_text_rect.left,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.left,m_entry_text_rect.bottom));
-			SetHighColor(ui_color( B_UI_SHINE_COLOR));
+			SetHighColor(ui_color( B_SHINE_COLOR));
 			StrokeLine(BPoint(m_entry_text_rect.right,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom-1));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.bottom),
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom));
 
-			SetHighColor(BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+			SetHighColor(BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.right-1,m_entry_text_rect.top+1));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+2),

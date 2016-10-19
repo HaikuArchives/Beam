@@ -186,9 +186,9 @@ void BubbleHelper::Helper()
     textview->MakeEditable(false);
     textview->MakeSelectable(false);
     textview->SetWordWrap(false);
-    BmSetLowUIColor( textview, B_UI_TOOLTIP_BACKGROUND_COLOR);
-    BmSetViewUIColor( textview, B_UI_TOOLTIP_BACKGROUND_COLOR);
-    BmSetHighUIColor( textview, B_UI_TOOLTIP_TEXT_COLOR);
+    textview->SetLowUIColor( B_TOOL_TIP_BACKGROUND_COLOR);
+    textview->SetViewUIColor( B_TOOL_TIP_BACKGROUND_COLOR);
+    textview->SetHighUIColor( B_TOOL_TIP_TEXT_COLOR);
     textwin->AddChild(textview);
     textwin->Run();
     textwin->Lock();

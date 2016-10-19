@@ -138,10 +138,10 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	,	mIsUsedForPrinting( false)
 	,	mInUpdate( false)
 {
-	SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	fLightColumnCol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
+	fLightColumnCol = ui_color( B_PANEL_BACKGROUND_COLOR);
 	fSelectedItemColorWindowActive = 
-	fSelectedItemColorWindowInactive = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
+	fSelectedItemColorWindowInactive = BmWeakenColor( B_SHADOW_COLOR, 3);
 
 	SetResizingMode( B_FOLLOW_NONE);
 	int32 flags = Flags();
@@ -216,9 +216,9 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 		if (!body) {
 			ResizeTo( Bounds().Width(), 0);
 			MoveTo( 0, 0);
-			SetViewColor( ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR));
+			SetViewColor( ui_color( B_DOCUMENT_BACKGROUND_COLOR));
 		} else {
-			SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+			SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
 			StartJob( body, !mIsUsedForPrinting);
 		}
 	}

@@ -260,8 +260,8 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		m_credits_view->MakeEditable( false);
 		m_credits_view->MakeSelectable( false);
 		m_credits_view->SetText( credits);
-		BmSetViewUIColor( m_credits_view, B_UI_CONTROL_BACKGROUND_COLOR);
-		BmSetLowUIColor( m_credits_view, B_UI_CONTROL_BACKGROUND_COLOR);
+		m_credits_view->SetViewUIColor( B_CONTROL_BACKGROUND_COLOR);
+		m_credits_view->SetLowUIColor( B_CONTROL_BACKGROUND_COLOR);
 	}
 
 	if(m_bitmap && curr_pos < m_logo_rect.bottom)
@@ -335,7 +335,7 @@ void ImageAboutWindow::ScrollCredits() {
 
 void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 {
-	view->SetHighColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
+	view->SetHighColor( BmWeakenColor( B_PANEL_BACKGROUND_COLOR, 2));
 	if(update_rect.Intersects(m_left_of_logo))
 		view->FillRect(m_left_of_logo);
 	if(update_rect.Intersects(m_logo_rect)) {
@@ -345,7 +345,7 @@ void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 		view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
 		view->SetDrawingMode(B_OP_OVER);
 	}
-	view->SetHighColor(ui_color( B_UI_PANEL_TEXT_COLOR));
+	view->SetHighColor(ui_color( B_PANEL_TEXT_COLOR));
 	if(update_rect.Intersects(m_title_rect))
 	{
 		view->SetFont(be_bold_font);
@@ -356,18 +356,18 @@ void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 		view->DrawString(m_version,BPoint(m_version_rect.left,m_version_rect.top+
 			m_plain_font_ascent));
 	if(m_email && update_rect.Intersects(m_email_rect)) {
-		view->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
+		view->SetHighColor( ui_color( B_CONTROL_HIGHLIGHT_COLOR));
 		view->DrawString(m_email,BPoint(m_email_rect.left,m_email_rect.top+m_plain_font_ascent));
 		view->StrokeLine(BPoint(m_email_rect.left,m_email_rect.top+m_plain_font_ascent+2), 
 							  BPoint(m_email_rect.right,m_email_rect.top+m_plain_font_ascent+2));
 	}
 	if(m_web && update_rect.Intersects(m_web_rect)) {
-		view->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
+		view->SetHighColor( ui_color( B_CONTROL_HIGHLIGHT_COLOR));
 		view->DrawString(m_web,BPoint(m_web_rect.left,m_web_rect.top+m_plain_font_ascent));
 		view->StrokeLine(BPoint(m_web_rect.left,m_web_rect.top+m_plain_font_ascent+2), 
 							  BPoint(m_web_rect.right,m_web_rect.top+m_plain_font_ascent+2));
 	}
-	view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	view->SetHighColor( ui_color( B_PANEL_TEXT_COLOR));
 	for(int i=0; i<m_num_lines; i++)
 		if(m_lines[i] && update_rect.Intersects(m_text_rects[i]))
 			view->DrawString(m_lines[i],BPoint(m_text_rects[i].left,m_text_rects[i].top+
@@ -382,8 +382,8 @@ AboutView::AboutView(BRect rect, ImageAboutWindow* parent)
 : BView(rect,NULL,B_FOLLOW_ALL_SIDES,B_WILL_DRAW|B_PULSE_NEEDED)
 {
 	m_parent = parent;
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
-	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewUIColor( B_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor( B_PANEL_BACKGROUND_COLOR);
 	SetFont(be_plain_font);
 }
 

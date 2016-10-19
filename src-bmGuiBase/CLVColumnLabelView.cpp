@@ -39,9 +39,9 @@ CLVColumnLabelView::CLVColumnLabelView(BRect Bounds,ColumnListView* parent,const
 , fLayoutIsLocked(false)
 {
 	SetFont(Font);
-	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
-	SetLowUIColor(B_UI_PANEL_BACKGROUND_COLOR);
-	SetHighUIColor(B_UI_PANEL_TEXT_COLOR);
+	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor(B_PANEL_BACKGROUND_COLOR);
+	SetHighUIColor(B_PANEL_TEXT_COLOR);
 	fParent = parent;
 	fDisplayList = &fParent->fColumnDisplayList;
 	fColumnClicked = NULL;
@@ -123,12 +123,12 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 				Stop.Set(ColumnEnd-1.0f,ViewBounds.top);
 				if(MergeWithRight && !(ThisColumn == fColumnClicked && fColumnResizing))
 					Stop.x = ColumnEnd;
-				AddLine(Start,Stop, ui_color( B_UI_SHINE_COLOR));
+				AddLine(Start,Stop, ui_color( B_SHINE_COLOR));
 				//Left line
 				if(!MergeWithLeft)
 					AddLine(BPoint(ColumnBegin,ViewBounds.top+1.0f),
 						BPoint(ColumnBegin,ViewBounds.bottom),
-						ui_color(B_UI_SHINE_COLOR));
+						ui_color(B_SHINE_COLOR));
 				//Bottom line
 				Start.Set(ColumnBegin+1.0f,ViewBounds.bottom);
 				if(MergeWithLeft)
@@ -136,14 +136,14 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 				Stop.Set(ColumnEnd-1.0f,ViewBounds.bottom);
 				if(MergeWithRight && !(ThisColumn == fColumnClicked && fColumnResizing))
 					Stop.x = ColumnEnd;
-				AddLine(Start,Stop, BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+				AddLine(Start,Stop, BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 				//Right line
 				if(ThisColumn == fColumnClicked && fColumnResizing)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
-						ui_color( B_UI_NAVIGATION_BASE_COLOR));
+						ui_color( B_NAVIGATION_BASE_COLOR));
 				else if(!MergeWithRight)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
-						BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+						BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 				EndLineArray();
 
 				//Add the label
@@ -188,16 +188,16 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 			BeginLineArray(3);
 			//Top line
 			AddLine(BPoint(ColumnBegin,ViewBounds.top),BPoint(ViewBounds.right,ViewBounds.top),
-				ui_color(B_UI_SHINE_COLOR));
+				ui_color(B_SHINE_COLOR));
 			//Left line
 			AddLine(BPoint(ColumnBegin,ViewBounds.top+1.0f),BPoint(ColumnBegin,ViewBounds.bottom),
-				ui_color(B_UI_SHINE_COLOR));
+				ui_color(B_SHINE_COLOR));
 			//Bottom line
 			Start.Set(ColumnBegin+1.0f,ViewBounds.bottom);
 			if(MergeWithLeft)
 				Start.x = ColumnBegin;
 			Stop.Set(ViewBounds.right,ViewBounds.bottom);
-			AddLine(Start,Stop,BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+			AddLine(Start,Stop,BmWeakenColor(B_SHADOW_COLOR, BeShadowMod));
 			EndLineArray();
 		}
 	}
@@ -214,13 +214,13 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 		float DragOutlineRight = DragOutlineLeft + fDragBoxWidth;
 		BeginLineArray(4);
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.top),BPoint(DragOutlineRight,
-			ViewBounds.top), ui_color( B_UI_NAVIGATION_BASE_COLOR));
+			ViewBounds.top), ui_color( B_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.bottom),BPoint(DragOutlineRight,
-			ViewBounds.bottom), ui_color( B_UI_NAVIGATION_BASE_COLOR));
+			ViewBounds.bottom), ui_color( B_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.top+1.0f),BPoint(DragOutlineLeft,
-			ViewBounds.bottom-1.0f), ui_color( B_UI_NAVIGATION_BASE_COLOR));
+			ViewBounds.bottom-1.0f), ui_color( B_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineRight,ViewBounds.top+1.0f),BPoint(DragOutlineRight,
-			ViewBounds.bottom-1.0f), ui_color( B_UI_NAVIGATION_BASE_COLOR));
+			ViewBounds.bottom-1.0f), ui_color( B_NAVIGATION_BASE_COLOR));
 		EndLineArray();
 		fPrevDragOutlineLeft = DragOutlineLeft;
 		fPrevDragOutlineRight = DragOutlineRight;
