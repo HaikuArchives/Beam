@@ -11,6 +11,8 @@ if $(OSPLAT) = X86 {
 	CCFLAGS += -proto lax -w nounwanted -w nounused ;
 }
 
+CFLAGS += --std=gnu9x ;
+
 SubDirSysHdrs $(COMMON_FOLDER)/include ;
 
 # <pe-src>
