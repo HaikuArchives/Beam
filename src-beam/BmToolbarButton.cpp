@@ -236,7 +236,7 @@ void BmToolbarButton::Draw( BRect updateRect) {
 
 	BRect rect(Bounds());
 #ifdef __HAIKU__
-	if (mHighlighted && IsEnabled()) {
+	if (be_control_look && mHighlighted && IsEnabled()) {
 		// draw higlighting border
 		uint32 flags = 0;
 		if (Value())
