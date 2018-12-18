@@ -1,6 +1,6 @@
 # Beam - BEware, Another Mailer #
 
-![screenshot](screenshots.png)
+![screenshot](screenshot.png)
 
 Beam is a mail-client for BeOS/Haiku.
 
