@@ -1,5 +1,7 @@
 # Beam - BEware, Another Mailer #
 
+![screenshot](screenshot.png)
+
 Beam is a mail-client for BeOS/Haiku.
 
 It is being developed by Oliver Tappe and distributed under the GPL
