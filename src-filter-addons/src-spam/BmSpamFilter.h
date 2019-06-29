@@ -78,14 +78,14 @@ class BmSpamFilter : public BmFilterAddon {
 			bool HashCompare( uint32 h, uint32 k) const
 													{ return hash==h && key==k; }
 		private:
-			static const uint32 ValueMask;
-			static const uint32 LockedMask;
-
 			uint32 hash;
 			uint32 key;
 			uint32 value;
 
 		} FeatureBucket;
+		static const uint32 ValueMask;
+		static const uint32 LockedMask;
+
 		
 		typedef struct
 		{

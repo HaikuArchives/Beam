@@ -1055,9 +1055,9 @@ const unsigned long BmSpamFilter::OsbfClassifier
 const unsigned long BmSpamFilter::OsbfClassifier
 ::MinPmaxPminRatio = 9;
 	
-const uint32 BmSpamFilter::OsbfClassifier::FeatureBucket
+const uint32 BmSpamFilter::OsbfClassifier
 ::ValueMask = 0x0000FFFFLU;
-const uint32 BmSpamFilter::OsbfClassifier::FeatureBucket
+const uint32 BmSpamFilter::OsbfClassifier
 ::LockedMask = 0x80000000LU;
 
 const BMessage* BmSpamFilter::OsbfClassifier::mJobSpecs = NULL;

@@ -35,7 +35,7 @@ Spinlock::Spinlock(int32& guardVar)
 
 Spinlock::~Spinlock() 
 {
-	atomic_and(&mGuardVar, ~1UL);
+	atomic_and(&mGuardVar, 0xffffffff);
 }
 
 

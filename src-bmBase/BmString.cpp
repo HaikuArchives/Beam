@@ -1942,6 +1942,7 @@ BmString::operator<<(char c)
 }
 
 
+#ifndef __x86_64__
 BmString&
 BmString::operator<<(int i)
 {
@@ -1960,6 +1961,7 @@ BmString::operator<<(unsigned int i)
 	
 	return *this << num;
 }
+#endif
 
 
 BmString&

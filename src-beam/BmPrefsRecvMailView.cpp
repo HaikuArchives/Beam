@@ -302,7 +302,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 									= new BmTextControl("Client Certificate:"),
 								mSelectClientCertButton 
 									= new BetterButton( 
-										"Select"B_UTF8_ELLIPSIS, 
+										"Select" B_UTF8_ELLIPSIS,
 										new BMessage(BM_CLIENT_CERT_SELECTED), 
 										this
 									),

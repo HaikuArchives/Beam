@@ -119,7 +119,7 @@ static int32 MarkMailsAs( void* data)
 	BmString newStatus = msg->FindString( BeamApplication::MSG_STATUS);
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount>1) {
@@ -201,7 +201,7 @@ static int32 MoveMails( void* data)
 	static int jobNum = 1;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 countFound = 0;
+	size_t countFound = 0;
 	if (refVect)
 		countFound = refVect->size();
 	if (countFound > 0) {
@@ -239,7 +239,7 @@ static int32 MoveMails( void* data)
 			refs[index++] = mailRef->EntryRef();
 		}
 		tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
-		tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, countFound);
+		tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, (int32)countFound);
 				// message takes ownership of refs-array!
 		TheJobStatusWin->PostMessage( &tmpMsg);
 		// now tell sending ref-view that we are finished:
@@ -264,7 +264,7 @@ static int32 TrashMails( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	uint32 countFound = 0;
+	size_t countFound = 0;
 	if (refVect)
 		countFound = refVect->size();
 	if (countFound>0) {
@@ -355,7 +355,7 @@ static int32 EditMailsAsNew( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount) {
@@ -382,7 +382,7 @@ static int32 RedirectMails( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount) {
@@ -411,7 +411,7 @@ static int32 ForwardMails( void* data) {
 	int32 buttonPressed = 1;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount>1) {
@@ -469,7 +469,7 @@ static int32 ReplyToMails( void* data) {
 	int32 buttonPressed = 0;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	int32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount>1) {
@@ -533,7 +533,7 @@ int32 PrintMails( void* data) {
 
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	uint32 msgCount = 0;
+	size_t msgCount = 0;
 	if (refVect)
 		msgCount = refVect->size();
 	if (msgCount) {

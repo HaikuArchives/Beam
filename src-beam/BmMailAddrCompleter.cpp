@@ -181,7 +181,7 @@ void BmMailAddressCompleter::MailAddrPatternSelector
 				;
 			if (*endPos) {
 				// found complete quoted-string.
-				int32 numChars = 1+endPos-pos;
+				size_t numChars = 1+endPos-pos;
 				pos += numChars;
 			} else {
 				// it seems that there is no ending quote, we assume the 
@@ -193,7 +193,7 @@ void BmMailAddressCompleter::MailAddrPatternSelector
 			// the separator char:
 			for(  endPos=pos; *endPos && *endPos!='"' && *endPos!=','; ++endPos)
 				;
-			int32 numChars = endPos-pos;
+			size_t numChars = endPos-pos;
 			pos += numChars;
 			if (*endPos == ',') {
 				pattLen = endPos-text.String()-pattStart;
