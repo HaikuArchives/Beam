@@ -161,7 +161,14 @@ void BmDataModel::TellControllers( BMessage* msg, bool waitForAck) {
 				ModelNameNC() 
 					<< ":TellControllers(): Controller found with NULL-handler!"
 			);
-		BMessenger msgr( controller);
+		BMessenger msgr( controller, NULL, &err);
+		if (err != B_OK)
+			BM_THROW_RUNTIME(
+				ModelNameNC()
+					<< ":TellControllers(): BMessenger() failed for handler "
+					<< controller->Name() << "!\n\n Result: "
+					<< strerror(err)
+			);
 		BM_LOG2( BM_LogModelController, 
 					BmString("Talking to handler ") << (*iter)->ControllerName());
 		if ((err=msgr.SendMessage( msg)) != B_OK)
