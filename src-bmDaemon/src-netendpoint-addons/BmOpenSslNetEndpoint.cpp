@@ -555,7 +555,7 @@ status_t BmOpenSslNetEndpoint
 		} else
 			stop = true;
 	}
-	if (pkcs12);
+	if (pkcs12)
 		PKCS12_free(pkcs12);
 	if (p12bio)
 		BIO_free(p12bio);

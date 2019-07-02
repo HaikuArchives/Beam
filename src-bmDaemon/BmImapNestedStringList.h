@@ -30,7 +30,7 @@ public:
 	const BmString& Text() const			{ return mText; }
 
 	inline bool IsLeaf() const				{ return mChildren.empty(); }
-	inline uint32 Size() const				{ return mChildren.size(); }
+	inline size_t Size() const				{ return mChildren.size(); }
 
 	const BmImapNestedStringList& operator[] (uint32 index) const;
 	

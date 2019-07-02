@@ -293,7 +293,8 @@ bool BmViewItemManager::ApplyFilter(BmViewItemFilter* filter,
 			"BmViewItemManager::ApplyFilter(): Unable to get lock"
 		);
 
-	BList visibleItems(mViewModelMap.size());
+	size_t mapSize = mViewModelMap.size();
+	BList visibleItems((int32)min_c(INT32_MAX, mapSize));
 	for(iter = mViewModelMap.begin(); iter != mViewModelMap.end(); ++iter) {
 		if (!iter->second->ShouldBeHidden())
 			visibleItems.AddItem(iter->second);
@@ -802,7 +803,7 @@ void BmListViewController::AddAllModelItems() {
 		);
 	BList* tempList = NULL;
 	if (!Hierarchical())
-		tempList = new BList( model->size());
+		tempList = new BList((int32)min_c(INT32_MAX, model->size()));
 	SetDisconnectScrollView( true);
 	SetInsertAtSortedPos( false);
 	BmModelItemMap::const_iterator iter;

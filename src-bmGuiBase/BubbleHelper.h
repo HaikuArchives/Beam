@@ -62,7 +62,7 @@ class IMPEXPBMGUIBASE BubbleHelper
 		void		Helper();
 		const char		*GetHelp(BView *view);
 		const BCursor  *GetCursor(BView *view);
-		static long _helper(void *arg);
+		static int32 _helper(void *arg);
 		BView		*FindView(BPoint where);
 		bool		enabled;
 
@@ -76,7 +76,7 @@ class IMPEXPBMGUIBASE BubbleHelper
 		
 		BubbleHelper();		// hide default constructor
 
-		static long runcount;
+		static int32 runcount;
 public:
 };
 

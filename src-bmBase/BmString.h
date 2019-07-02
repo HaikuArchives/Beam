@@ -268,8 +268,10 @@ public:
 	BmString 		&operator<<(const char *);
 	BmString 		&operator<<(const BmString &);
 	BmString 		&operator<<(char);
+#ifndef __x86_64__
 	BmString 		&operator<<(int);
 	BmString 		&operator<<(unsigned int);
+#endif
 	BmString 		&operator<<(uint32);
 	BmString 		&operator<<(int32);
 	BmString 		&operator<<(uint64);

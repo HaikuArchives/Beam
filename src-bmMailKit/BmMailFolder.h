@@ -76,7 +76,7 @@ public:
 													{ return &mEntryRef; }
 	inline const node_ref& NodeRef() const
 													{ return mNodeRef; }
-	inline const int32 SpecialMailCount() const
+	inline const size_t SpecialMailCount() const
 													{ return mSpecialMailRefSet.size(); }
 	inline const int32 SpecialMailCountForSubfolders() const
 													{ return mSpecialMailCountForSubfolders; }

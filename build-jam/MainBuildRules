@@ -293,6 +293,7 @@ if $(OSPLAT) = X86 {
 if $(IS_GCC_4_PLATFORM) {
 	# gcc 4 Haiku
 	STDC++LIB = stdc++ ;
+	C++FLAGS = -std=c++98 ;
 } else {
 	# BeOS or BeOS compatible Haiku
 	if $(OSPLAT) = X86 {

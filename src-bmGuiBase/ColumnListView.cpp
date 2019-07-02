@@ -1080,7 +1080,7 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 	if (!numItems)
 		return startIndex;
 	if (!fCompare || !SortDepth)
-		return ((int32)ThisLevelItems.LastItem())+1;
+		return ((int32)(addr_t)ThisLevelItems.LastItem())+1;
 	int32 currPos = numItems/2;
 	int32 lb = 0;
 	int32 ub = numItems-1;
@@ -1089,7 +1089,7 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
 			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
-			CompareResult = fCompare(item,(CLVListItem*)FullListItemAt((int32)ThisLevelItems.ItemAt(currPos)),fColumnList.IndexOf(Column),Column->Flags());
+			CompareResult = fCompare(item,(CLVListItem*)FullListItemAt((int32)(addr_t)ThisLevelItems.ItemAt(currPos)),fColumnList.IndexOf(Column),Column->Flags());
 			if(Column->fSortMode == Descending)
 				CompareResult = 0-CompareResult;
 		}
@@ -1102,7 +1102,7 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 		}
 	}
 	if (currPos == numItems) {
-		int32 idx = 1+(int32)ThisLevelItems.ItemAt( numItems-1);
+		int32 idx = 1+(int32)(addr_t)ThisLevelItems.ItemAt( numItems-1);
 		CLVListItem* item = (CLVListItem*)fFullItemList.ItemAt(idx);
 		while( item && item->OutlineLevel() > ThisLevel) {
 			item = (CLVListItem*)fFullItemList.ItemAt(++idx);
@@ -1110,7 +1110,7 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 		return idx;
 	}
 	else
-		return (int32)ThisLevelItems.ItemAt( currPos);
+		return (int32)(addr_t)ThisLevelItems.ItemAt( currPos);
 }
 
 
@@ -1444,7 +1444,7 @@ bool ColumnListView::RemoveItems(int32 fullListIndex, int32 count)
 	bool result;
 	if(fHierarchical)
 	{
-		uint32 LastSuperItemLevel = ULONG_MAX;
+		uint32 LastSuperItemLevel = UINT32_MAX;
 		int32 Counter;
 		int32 DisplayItemsToRemove = 0;
 		int32 FirstDisplayItemToRemove = -1;

@@ -124,7 +124,7 @@ public:
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool IsGroup() const			{ return mIsGroup; }
-	inline int32 AddrCount() const		{ return mAddrList.size(); }
+	inline size_t AddrCount() const		{ return mAddrList.size(); }
 	inline const BmString& GroupName() const	
 													{ return mGroupName; }
 	inline BmAddress FirstAddress() const

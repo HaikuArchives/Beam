@@ -36,7 +36,7 @@
 #include "BubbleHelper.h"
 #include "Colors.h"
 
-long BubbleHelper::runcount=0;
+int32 BubbleHelper::runcount=0;
 BubbleHelper* TheBubbleHelper = NULL;
 
 void BubbleHelper::CreateInstance()
@@ -163,7 +163,7 @@ const BCursor* BubbleHelper::GetCursor(BView *view)
 	return cursor;
 }
 
-long BubbleHelper::_helper(void *arg)
+int32 BubbleHelper::_helper(void *arg)
 {
     ((BubbleHelper*)arg)->Helper();
     return 0;
@@ -202,7 +202,7 @@ void BubbleHelper::Helper()
     while(be_app_messenger.IsValid())
     {
         BPoint where;
-        ulong buttons;
+        uint32 buttons;
         if(enabled)
         {
             if(textwin->Lock())

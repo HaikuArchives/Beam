@@ -307,7 +307,7 @@ bool BmReadStringAttr( const BNode* node, const char* attrName,
 	attr_info attrInfo;
 	BmString tmpStr;
 	if (node->GetAttrInfo( attrName, &attrInfo) == B_OK) {
-		long long size = std::max( (long long)0, attrInfo.size-1);
+		off_t size = std::max( (off_t)0, attrInfo.size-1);
 		char* buf = tmpStr.LockBuffer( int32(size));
 		node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size_t(size));
 		tmpStr.UnlockBuffer( int32(size));

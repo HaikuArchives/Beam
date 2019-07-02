@@ -426,8 +426,8 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 	vector<BmString> charsets;
 	BmString sets = ThePrefs->GetString( "StandardCharsets");
 	split( BmPrefs::nListSeparator, sets, charsets);
-	int32 numStdSets = charsets.size();
-	for( int i=0; i<numStdSets; ++i) {
+	size_t numStdSets = charsets.size();
+	for( uint i=0; i<numStdSets; ++i) {
 		charset = charsets[i];
 		charset.ToLower();
 		BMessage* msg = new BMessage( msgType);
