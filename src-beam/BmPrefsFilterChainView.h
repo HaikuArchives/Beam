@@ -58,7 +58,7 @@ public:
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "FilterChainView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
-	const char* ItemNameForCaption()		{ return "filter-chain"; }
+	const char* ItemNameForCaption()		{ return "filter chain"; }
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);

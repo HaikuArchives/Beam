@@ -135,7 +135,7 @@ void BmRulerView::MouseDown( BPoint point) {
 		BmString s = BmString("The right margin is currently fixed\n"
 									 "to a maximum of ") 
 							<< maxLineLen 
-							<< " characters.\n\nPlease check Preferences.";
+							<< " characters.\n\nPlease check the preferences.";
 		TheBubbleHelper->SetHelp( this, s.String());
 	} else
 		TheBubbleHelper->SetHelp( this, NULL);

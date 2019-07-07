@@ -404,9 +404,9 @@ bool BmMailRefView::ReselectionInfo
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
 
-const char* const BmMailRefView::MENU_MARK_AS =			"Set Status To";
-const char* const BmMailRefView::MENU_FILTER = 			"Apply Specific Filter";
-const char* const BmMailRefView::MENU_MOVE =				"Move To";
+const char* const BmMailRefView::MENU_MARK_AS =			"Set status to";
+const char* const BmMailRefView::MENU_FILTER = 			"Apply specific filter";
+const char* const BmMailRefView::MENU_MOVE =				"Move to";
 
 const BmString BmDragId = "beam/ref";
 
@@ -450,15 +450,15 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "S", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
-									  18.0, "(S)tatus [Icon]"));
+									  18.0, "(S)tatus [icon]"));
 	AddColumn( new CLVColumn( "A", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
-									  18.0, "(A)ttachments [Icon]"));
+									  18.0, "(A)ttachments [icon]"));
 	AddColumn( new CLVColumn( "P", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
-									  18.0, "(P)riority [Icon]"));
+									  18.0, "(P)riority [icon]"));
 	AddColumn( new CLVColumn( "From", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
 	AddColumn( new CLVColumn( "Subject", 300.0, flags | CLV_COLTYPE_USERTEXT, 
@@ -474,24 +474,24 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "Account", 120.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
 	AddColumn( new CLVColumn( "To", 150.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
-	AddColumn( new CLVColumn( "Reply-To", 150.0, flags | CLV_COLTYPE_USERTEXT,
+	AddColumn( new CLVColumn( "Reply to", 150.0, flags | CLV_COLTYPE_USERTEXT,
 									  20.0));
 	AddColumn( new CLVColumn( "Name", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Delivery-Date", 110.0, 
+	AddColumn( new CLVColumn( "Delivery date", 110.0, 
 									  flags | CLV_COLDATA_BIGTIME | CLV_COLTYPE_USERTEXT,
 									  20.0));
-	AddColumn( new CLVColumn( "Tracker-Name", 150.0, 
+	AddColumn( new CLVColumn( "Tracker name", 150.0, 
 									  flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
 	AddColumn( new CLVColumn( "S", 100.0, flags | CLV_COLTYPE_USERTEXT, 
-									  40.0, "(S)tatus [Text]"));
+									  40.0, "(S)tatus [text]"));
 	AddColumn( new CLVColumn( "A", 100.0, 
 									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
-									  18.0, "(A)ttachments [Text]"));
+									  18.0, "(A)ttachments [text]"));
 	AddColumn( new CLVColumn( "P", 100.0, 
 									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
-									  18.0, "(P)riority [Text]"));
+									  18.0, "(P)riority [text]"));
 	AddColumn( new CLVColumn( "Identity", 120.0, flags | CLV_COLTYPE_USERTEXT, 
 									  40.0));
 	AddColumn( new CLVColumn( "Class", 40.0, flags | CLV_COLTYPE_USERTEXT, 
@@ -510,7 +510,7 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	};
 	SetDisplayOrder(displayOrder);
 	
-	TheBubbleHelper->SetHelp( ColumnLabelView(), "Right-Click to show/hide columns");
+	TheBubbleHelper->SetHelp( ColumnLabelView(), "Right-click to show/hide columns");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1171,14 +1171,14 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		replyMenu->SetFont( &font);
 	AddItemToMenu( menu, replyMenuItem, target);
 	AddItemToMenu( replyMenu, 
-				   CreateMenuItem( "Reply (Auto)", BMM_REPLY), target);
+				   CreateMenuItem( "Reply (auto)", BMM_REPLY), target);
 	AddItemToMenu( replyMenu, 
-				   CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
+				   CreateMenuItem( "Reply to list", BMM_REPLY_LIST), target);
 	AddItemToMenu( replyMenu, 
-				   CreateMenuItem( "Reply To Person", BMM_REPLY_ORIGINATOR), 
+				   CreateMenuItem( "Reply to person", BMM_REPLY_ORIGINATOR), 
 					target);
 	AddItemToMenu( replyMenu, 
-						CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
+						CreateMenuItem( "Reply to all", BMM_REPLY_ALL), target);
 
 	BMenuItem* fwdMenuItem = CreateSubMenuItem( "Forward", BMM_FORWARD_INLINE);
 	BMenu* fwdMenu = fwdMenuItem->Submenu();
@@ -1186,14 +1186,14 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		fwdMenu->SetFont( &font);
 	AddItemToMenu( menu, fwdMenuItem, target);
 	AddItemToMenu( fwdMenu, 
-						CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), 
+						CreateMenuItem( "Forward inline", BMM_FORWARD_INLINE), 
 						target);
 	AddItemToMenu( fwdMenu, 
-						CreateMenuItem( "Forward As Attachment", 
+						CreateMenuItem( "Forward as attachment", 
 											 BMM_FORWARD_ATTACHED), 
 						target);
 	AddItemToMenu( fwdMenu, 
-						CreateMenuItem( "Forward Inline (With Attachments)", 
+						CreateMenuItem( "Forward inline (with attachments)", 
 											 BMM_FORWARD_INLINE_ATTACH), 
 						target);
 	AddItemToMenu( menu, CreateMenuItem( "Redirect", BMM_REDIRECT), target);
@@ -1217,12 +1217,12 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	menu->AddItem( moveMenu);
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Learn as Spam", BMM_LEARN_AS_SPAM), target);
-	AddItemToMenu( menu, CreateMenuItem( "Learn as Tofu", BMM_LEARN_AS_TOFU), target);
+	AddItemToMenu( menu, CreateMenuItem( "Learn as spam", BMM_LEARN_AS_SPAM), target);
+	AddItemToMenu( menu, CreateMenuItem( "Learn as tofu", BMM_LEARN_AS_TOFU), target);
 	menu->AddSeparatorItem();
 
 	AddItemToMenu( menu, 
-						CreateMenuItem( "Filter (Applies Associated Chain)", 
+						CreateMenuItem( "Filter (applies associated chain)", 
 											 new BMessage( BMM_FILTER), "Filter"), 
 						target);
 
@@ -1234,32 +1234,32 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		filterMenu->SetFont( &font);
 	menu->AddItem( filterMenu);
 	AddItemToMenu( menu, 
-						CreateMenuItem( "Create Filter From Mail...", 
+						CreateMenuItem( "Create filter from mail" B_UTF8_ELLIPSIS, 
 											 new BMessage( BMM_CREATE_FILTER)), 
 						target);
 
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Edit As New...", BMM_EDIT_AS_NEW), 
+	AddItemToMenu( menu, CreateMenuItem( "Edit as new" B_UTF8_ELLIPSIS, BMM_EDIT_AS_NEW), 
 						target);
 	menu->AddSeparatorItem();
 
 	if (isContextMenu) {
 		AddItemToMenu( menu, 
-							CreateMenuItem( "Print...", 
-												 BMM_PRINT, "Print Message..."), 
+							CreateMenuItem( "Print" B_UTF8_ELLIPSIS, 
+												 BMM_PRINT, "Print message" B_UTF8_ELLIPSIS), 
 							target);
 		menu->AddSeparatorItem();
 	} else {
 		AddItemToMenu( menu, 
-							CreateMenuItem( "Previous Message", BMM_PREVIOUS_MESSAGE),
+							CreateMenuItem( "Previous message", BMM_PREVIOUS_MESSAGE),
 							target);
 		AddItemToMenu( menu, 
-							CreateMenuItem( "Next Message", BMM_NEXT_MESSAGE), 
+							CreateMenuItem( "Next message", BMM_NEXT_MESSAGE), 
 							target);
 		menu->AddSeparatorItem();
 	}
-	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
+	AddItemToMenu( menu, CreateMenuItem( "Move to trash", BMM_TRASH), target);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1267,7 +1267,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::PopulateLabelViewMenu( BMenu* menu) {
-	BMenuItem* item = new BMenuItem( "Connect Layout to Parent", 
+	BMenuItem* item = new BMenuItem( "Connect layout to parent", 
 												new BMessage( BMM_CONNECT_LAYOUT));
 	if (mCurrFolder && mCurrFolder->RefListStateInfoConnectedToParent())
 		item->SetMarked( true);

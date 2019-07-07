@@ -218,7 +218,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 								k[6], k[7], k[8], k[9], NULL
 							),
 							mAddToChainControl = new BmCheckControl( 
-								"Add new filter to default-chain, too", 
+								"Add new filter to default chain, too", 
 								new BMessage(BM_ADD_TO_CHAIN_CHANGED), 
 								this
 							),
@@ -226,7 +226,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 						),
 						new HGroup(
 							mRemoveButton = new BetterButton( 
-								"Remove Filter", 
+								"Remove filter", 
 								new BMessage( BM_REMOVE_FILTER), 
 								this, minimax( -1, -1, -1, -1)
 							),
@@ -297,7 +297,7 @@ void BmPrefsFilterView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mFilterListView, 
-		"This listview shows every filter you have defined."
+		"This list view shows every filter you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mFilterControl, 
@@ -319,7 +319,7 @@ void BmPrefsFilterView::Initialize() {
 
 	mAddPopup->Menu()->SetLabelFromMarked( false);
 	mAddPopup->MenuBar()->SetLabelFromMarked( false);
-	mAddPopup->MenuItem()->SetLabel( "  Add Filter...  ");
+	mAddPopup->MenuItem()->SetLabel( "  Add filter...  ");
 
 	// initialize all addon-views:
 	BmFilterAddonMap::const_iterator iter;
@@ -494,7 +494,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Remove Filter", 
+						"Remove filter", 
 						(BmString("Are you sure about removing the filter\n\n\t<") 
 							<< mCurrFilter->Name() << ">?").String(),
 						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
@@ -533,7 +533,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					BmString complaint;
 					complaint = msg->FindString( MSG_COMPLAINT);
 					// first step, tell user about complaint:
-					BAlert* alert = new BAlert( "Sanity Check Failed", 
+					BAlert* alert = new BAlert( "Sanity check failed", 
 														 complaint.String(),
 													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);

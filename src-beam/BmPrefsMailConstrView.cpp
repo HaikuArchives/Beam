@@ -50,20 +50,20 @@ using namespace BmEncoding;
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailConstrView::BmPrefsMailConstrView() 
-	:	inherited( "Sending Mail")
+	:	inherited( "Sending mail")
 	,	mPeoplePanel( NULL)
 {
 	MView* view = 
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Editing",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail editing",
 					new VGroup(
 						mMaxLineLenControl 
 							= new BmTextControl( "Set right margin to (chars):"),
 						mHardWrapControl 
 							= new BmCheckControl( 
-								"Hard-wrap mailtext at right margin", 
+								"Hard-wrap mail text at right margin", 
 								new BMessage(BM_HARD_WRAP_CHANGED), 
 								this, 
 								ThePrefs->GetBool("HardWrapMailText")
@@ -72,21 +72,21 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mQuotingStringControl 
 							= new BmTextControl( "Quoting string:"),
 						mQuoteFormattingControl 
-							= new BmMenuControl( "Quote-formatting:", 
+							= new BmMenuControl( "Quote formatting:", 
 														new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
 						mUndoModeControl 
-							= new BmMenuControl( "Undo-Granularity:", 
+							= new BmMenuControl( "Undo granularity:", 
 														new BPopUpMenu("")),
 						new Space(),
 						0
 					)
 				),
 				new VGroup(
-					new MBorder( M_LABELED_BORDER, 10, (char*)"Character-Sets",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Character sets",
 						new VGroup(
 							mDefaultCharsetControl = new BmMenuControl( 
-								"Default-charset:", 
+								"Default charset:", 
 								new BmMenuController( "", this, 
 															 new BMessage( BM_CHARSET_SELECTED), 
 															 &BmGuiRosterBase::RebuildCharsetMenu,
@@ -100,10 +100,10 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 							0
 						)
 					),
-					new MBorder( M_LABELED_BORDER, 10, (char*)"People Options",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"People options",
 						new VGroup(
 							mLookInPeopleFolderControl = new BmCheckControl( 
-								"Look only in people-folder", 
+								"Look only in people folder", 
 					         new BMessage(BM_LOOK_IN_PEOPLE_CHANGED), 
 					         this, 
 					         ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", 
@@ -111,7 +111,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 					      ),
 							new Space( minimax(0,5,0,5)),
 							mAddNameToPeopleControl = new BmCheckControl( 
-								"Add People's Names to Mail-Address", 
+								"Add people's names to mail address", 
 					         new BMessage(BM_ADD_PEOPLE_NAME_CHANGED), 
 						      this, ThePrefs->GetBool("AddPeopleNameToMailAddr",true)
 						   ),
@@ -139,7 +139,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mReplyIntroStrControl = new BmTextControl( "Intro:"),
 						mReplySubjectStrControl = new BmTextControl( "Subject:"),
 						mReplyIntroStrPrivateControl 
-							= new BmTextControl( "Personal Phrase:"),
+							= new BmTextControl( "Personal phrase:"),
 						0
 					)
 				),
@@ -220,7 +220,7 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmPrefsMailConstrView::PeopleFolderButtonLabel() {
-	BmString label( "   Set People Folder (currently '");
+	BmString label( "   Set people folder (currently '");
 	label << ThePrefs->GetString( "PeopleFolder", 
 											"/boot/home/people") 
 			<< "')...   ";
@@ -245,8 +245,8 @@ void BmPrefsMailConstrView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mMaxLineLenControl, 
 		"Here you can enter the maximum number of characters\n"
-		"per line Beam should allow in the mailtext.\n"
-		"This corresponds to the right margin in the mail-editor."
+		"per line Beam should allow in the mail text.\n"
+		"This corresponds to the right margin in the mail editor."
 	);
 	TheBubbleHelper->SetHelp( 
 		mQuotingStringControl, 
@@ -263,18 +263,18 @@ void BmPrefsMailConstrView::Initialize() {
 		"	resulting in a very short line. This sooner or later causes\n"
 		"	ugly mails with a comb-like layout (alternating long and\n"
 		"	short lines).\n"
-		"Push Margin:\n"
+		"Push margin:\n"
 		"	In this mode, Beam will push the right margin of a reply/forward\n"
 		"	just as needed. The original formatting of the mail stays intact,\n"
 		"	but the mail may exceed 80 chars per line (which will annoy\n"
 		"	recipients using terminal-based mailers).\n"
-		"Auto Wrap:\n"
+		"Auto wrap:\n"
 		"	This will cause Beam to automatically rewrap blocks of quoted \n"
 		"	lines in a way that tries to keep the paragraph structure of the\n"
 		"	original mail intact.\n\n"
-		"'Auto Wrap' usually gives the best results for normal text,\n"
+		"'Auto wrap' usually gives the best results for normal text,\n"
 		"but since it can lead to unwanted wrapping of structured text\n"
-		"(e.g. code), Beam uses 'Push Margin' by default."
+		"(e.g. code), Beam uses 'Push margin' by default."
 	);
 	TheBubbleHelper->SetHelp( 
 		mForwardIntroStrControl, 
@@ -310,7 +310,7 @@ void BmPrefsMailConstrView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mReplyIntroStrPrivateControl, 
 		"When replying to a person only, it seems inappropriate\n"
-		"to have: 'On ... Steve Miller wrote:' in the intro text.\n"
+		"to have: 'On ... Robert Mueller wrote:' in the intro text.\n"
 		"In this field you can enter a text that will be used\n"
 		"instead of the name when expanding %f in order to\n"
 		"achieve something like: 'On ... you wrote'."
@@ -335,26 +335,26 @@ void BmPrefsMailConstrView::Initialize() {
 		mHardWrapControl, 
 		"Checking this causes Beam to hard-wrap the mailtext at the given\n"
 		"right margin. This means that the mail will be sent exactly as you \n"
-		"see it on screen, so that every other mail-program will be able to\n"
+		"see it on screen, so that every other mail program will be able to\n"
 		"correctly display this mail.\n"
 		"Uncheck this if you want soft-wrapped paragraphs, that will be \n"
-		"layouted by the receiving mail-client.\n"
+		"layouted by the receiving mail client.\n"
 		"Please note that this only concerns the mailtext entered by yourself,\n"
 		"quoted text will *always* be hard-wrapped.\n\n"
-		"Hint: Use soft-wrap only if you know that the receiving mail-program\n"
+		"Hint: Use soft-wrap only if you know that the receiving mail program\n"
 		"is able to handle long lines nicely (most modern mailers do, but some\n"
 		"mailing-list software does not)."
 	);
 	TheBubbleHelper->SetHelp( 
 		mLookInPeopleFolderControl, 
-		"If checked, Beam will only deal with people-files that\n"
-		"live in the people-folder.\n"
-		"If unchecked, Beam will accept people-files outside of this\n"
+		"If checked, Beam will only deal with people files that\n"
+		"live in the people folder.\n"
+		"If unchecked, Beam will accept people files outside of this\n"
 		"folder, too."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAddNameToPeopleControl, 
-		"If checked, Beam will not only use people's mail-addresses when\n"
+		"If checked, Beam will not only use people's mail addresses when\n"
 		"sending a mail to them, but the people's names will be added, too.\n"
 		"Assuming name 'Polly Jean Harvey' with address 'pjharvey@test.org',\n"
 		"you get:\n"
@@ -363,16 +363,16 @@ void BmPrefsMailConstrView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mPeopleFolderButton, 
-		"Click this button in order to\nselect a different people-folder."
+		"Click this button in order to\nselect a different people folder."
 	);
 	TheBubbleHelper->SetHelp( 
 		mUndoModeControl, 
 		"Here you can select the granularity of the\n"
-		"undo- & redo-operations in the mail-editor:\n"
+		"undo- & redo-operations in the mail editor:\n"
 		"	 'Words' - means that single words will be undone/redone.\n"
 		"	 'Paragraphs' - means that whole paragraphs will be undone/redone.\n"
 		"	 'None' - means that different kinds of editing operations will be\n"
-		"	          undone/redone (BeOS-standard)."
+		"	          undone/redone (Haiku-standard)."
 	);
 
 	// setup menu for frequently used charsets:
@@ -642,10 +642,10 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 							PeopleFolderButtonLabel().String());
 						NoticeChange();
 						BAlert* alert = new BAlert( 
-								"People Folder", 
-								"Done, Beam will use the new people-folder after a "
+								"People folder", 
+								"Done, Beam will use the new people folder after a "
 									"restart",
-								"Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+								"OK", NULL, NULL, B_WIDTH_AS_USUAL,
 								B_INFO_ALERT
 						);
 						alert->Go();

@@ -317,23 +317,23 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 		menu->AddItem( subMenu);
 	}
 	subMenu = _CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,
-													  "(Not in any Group)", &font);
+													  "(Not in any group)", &font);
 	menu->AddItem( subMenu);
 	menu->AddSeparatorItem();
 	if (foreignMap.size() > 0) {
 		subMenu = _CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
-														  "(Not in People-Folder)", &font);
+														  "(Not in people folder)", &font);
 		menu->AddItem( subMenu);
 		menu->AddSeparatorItem();
 	}
 	subMenu = _CreateSubmenuForPersonMap( allPeopleMap, templateMsg, addrField,
-													  "All People", &font);
+													  "All people", &font);
 	menu->AddItem( subMenu);
 
 	// now add all addresses that we sent mails to, but that do not live
 	// in a people file:
 	BMessage* msg;
-	subMenu = new BMenu( "Other Known Addresses");
+	subMenu = new BMenu( "Other known addresses");
 	subMenu->SetFont( &font);
 	BmKnownAddrSet::const_iterator addr;
 	for( addr = mKnownAddrSet.begin(); addr != mKnownAddrSet.end(); ++addr) {
@@ -739,7 +739,7 @@ BMenu* BmPeopleList::_CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 		msg = new BMessage( templateMsg);
 		msg->AddString( addrField, allAddrs.String());
 		subMenu->AddSeparatorItem();
-		subMenu->AddItem( new BMenuItem( "<Add Complete Group>", msg));
+		subMenu->AddItem( new BMenuItem( "<Add complete group>", msg));
 	}
 	return subMenu;
 }

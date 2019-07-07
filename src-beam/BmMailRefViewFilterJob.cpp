@@ -20,9 +20,9 @@
 \********************************************************************************/
 
 const char* const BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS 
-	= "Subject or Address";
+	= "Subject or address";
 const char* const BmMailRefItemFilter::FILTER_MAILTEXT
-	= "Mailtext";
+	= "Mail text";
 
 /*------------------------------------------------------------------------------*\
 	BmMailRefItemFilter()

@@ -121,9 +121,9 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 				"99 shortcuts"
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Shortcut Info",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Shortcut info",
 				new VGroup(
-					mNameControl = new BmTextControl( "Menu-Item:"),
+					mNameControl = new BmTextControl( "Menu item:"),
 					new Space( minimax(0,5,0,5)),
 					mShortcutControl = new BmShortcutControl( "Shortcut:"),
 					0
@@ -158,8 +158,8 @@ BmPrefsShortcutsView::~BmPrefsShortcutsView() {
 void BmPrefsShortcutsView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper->SetHelp( mListView, "This listview contains all menu-items of Beam \nwith their current shortcuts.");
-	TheBubbleHelper->SetHelp( mShortcutControl, "Here you can define the shortcut to be used for the currently selected item.\nJust type the shortcut you wish to use, but leave out the menu-key \n(i.e. <ALT> or <CTRL>), that is added automatically.");
+	TheBubbleHelper->SetHelp( mListView, "This list view contains all menu items of Beam \nwith their current shortcuts.");
+	TheBubbleHelper->SetHelp( mShortcutControl, "Here you can define the shortcut to be used for the currently selected item.\nJust type the shortcut you wish to use, but leave out the menu key \n(i.e. <ALT> or <CTRL>), that is added automatically.");
 
 	mShortcutControl->SetTarget( this);
 
@@ -299,7 +299,7 @@ ColumnListView* BmPrefsShortcutsView::CreateListView( int32 width, int32 height)
 	if (ThePrefs->GetBool("StripedListView"))
 		mListView->SetStripedBackground( true);
 
-	mListView->AddColumn( new CLVColumn( "Menu-Item", 300.0, CLV_SORT_KEYABLE|flags, 100.0));
+	mListView->AddColumn( new CLVColumn( "Menu item", 300.0, CLV_SORT_KEYABLE|flags, 100.0));
 	mListView->AddColumn( new CLVColumn( "Shortcut", 80.0, CLV_SORT_KEYABLE|flags, 4.0));
 
 	mListView->SetSortFunction( CLVEasyItem::CompareItems);

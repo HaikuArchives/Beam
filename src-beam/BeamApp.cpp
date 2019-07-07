@@ -682,7 +682,7 @@ BeamApplication::BeamApplication( const char* sig)
 		// init charset-tables:
 		BmEncoding::InitCharsetMap();
 
-		BM_LOG( BM_LogApp, BmString("...setting up foreign-keys..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "setting up foreign-keys" B_UTF8_ELLIPSIS));
 		// now setup all foreign-key connections between these list-models:
 		TheRecvAccountList->AddForeignKey( BmIdentity::MSG_RECV_ACCOUNT, 
 													  TheIdentityList.Get());
@@ -723,7 +723,7 @@ BeamApplication::BeamApplication( const char* sig)
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
-		BM_LOG( BM_LogApp, BmString("...creating main-window..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "creating main-window" B_UTF8_ELLIPSIS));
 		BmMainWindow::CreateInstance();
 		
 		TheBubbleHelper->EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
@@ -793,29 +793,29 @@ thread_id BeamApplication::Run() {
 			InstallDeskbarItem();
 
 		// start most of our list-models:
-		BM_LOG( BM_LogApp, BmString("...reading receving accounts..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading receving accounts" B_UTF8_ELLIPSIS));
 		TheRecvAccountList->StartJobInNewThread();
 
 		// start most of our list-models:
-		BM_LOG( BM_LogApp, BmString("...reading identities..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading identities" B_UTF8_ELLIPSIS));
 		TheIdentityList->StartJobInThisThread();
 
-		BM_LOG( BM_LogApp, BmString("...reading signatures..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading signatures" B_UTF8_ELLIPSIS));
 		TheSignatureList->StartJobInThisThread();
 
-		BM_LOG( BM_LogApp, BmString("...reading filters..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading filters" B_UTF8_ELLIPSIS));
 		TheFilterList->StartJobInNewThread();
 
-		BM_LOG( BM_LogApp, BmString("...reading filter-chains..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading filter chains" B_UTF8_ELLIPSIS));
 		TheFilterChainList->StartJobInNewThread();
 
-		BM_LOG( BM_LogApp, BmString("...reading SMTP-accounts..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "reading SMTP accounts" B_UTF8_ELLIPSIS));
 		TheSmtpAccountList->StartJobInThisThread();
 
-		BM_LOG( BM_LogApp, BmString("...querying people..."));
+		BM_LOG( BM_LogApp, BmString(B_UTF8_ELLIPSIS "querying people" B_UTF8_ELLIPSIS));
 		ThePeopleList->StartJobInNewThread();
 
-		BM_LOG( BM_LogApp, BmString("Showing main-window."));
+		BM_LOG( BM_LogApp, BmString("Showing main window."));
 		TheMainWindow->Show();
 
 		tid = inherited::Run();
@@ -881,7 +881,7 @@ void BeamApplication::RemoveDeskbarItem() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BeamApplication::QuitRequested() {
-	BM_LOG( BM_LogApp, "App: quit requested, checking state...");
+	BM_LOG( BM_LogApp, "App: quit requested, checking state" B_UTF8_ELLIPSIS);
 	mIsQuitting = true;
 	bool shouldQuit = true;
 	if (TheMailMonitor->LockLooper()) {
@@ -889,10 +889,10 @@ bool BeamApplication::QuitRequested() {
 		int32 count = CountWindows();
 		// first check if there are any active jobs:
 		if (TheJobStatusWin && TheJobStatusWin->HasActiveJobs()) {
-			BAlert* alert = new BAlert( "Active Jobs", 
+			BAlert* alert = new BAlert( "Active jobs", 
 				"There are still some jobs/connections active!"
 					"\nDo you really want to quit now?",
-				"Yes, Quit Now", "Cancel", NULL, B_WIDTH_AS_USUAL,
+				"Yes, Quit now", "Cancel", NULL, B_WIDTH_AS_USUAL,
 				B_WARNING_ALERT
 			);
 			alert->SetShortcut( 1, B_ESCAPE);
@@ -929,7 +929,7 @@ bool BeamApplication::QuitRequested() {
 	snooze( 200*1000);
 		// there might be slaves running, give them some more time to stop.
 	BM_LOG( BM_LogApp, 
-			  shouldQuit ? "ok, App is quitting" : "no, app isn't quitting");
+			  shouldQuit ? "ok, app is quitting" : "no, app isn't quitting");
 	return shouldQuit;
 }
 

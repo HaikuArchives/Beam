@@ -137,13 +137,13 @@ BmRecvAccView::BmRecvAccView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "Type", 50.0, flags, 40.0));
 	AddColumn( new CLVColumn( "C", 20.0, flags, 20.0, "(C)heck?"));
 	AddColumn( new CLVColumn( "R", 20.0, flags, 20.0, 
-									  "(R)emove Mails from Server?"));
-	AddColumn( new CLVColumn( "FilterChain", 80.0, flags, 40.0));
+									  "(R)emove mails from server?"));
+	AddColumn( new CLVColumn( "Filter chain", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Server", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Port", 40.0, 0, 40.0));
 	AddColumn( new CLVColumn( "Interval", 40.0, 0, 40.0));
 	AddColumn( new CLVColumn( "Encryption", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "Auth-Method", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Auth method", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, flags, 40.0));
 
@@ -207,7 +207,7 @@ void BmRecvAccView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsRecvMailView::BmPrefsRecvMailView() 
-	:	inherited( "Receiving Mail-Accounts (POP3 / IMAP)")
+	:	inherited( "Receiving mail accounts (POP3 / IMAP)")
 	,	mClientCertPanel( NULL)
 {
 	MView* view = 
@@ -220,13 +220,13 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				"99 accounts"
 			),
 			new HGroup(
-				mAddPopButton = new BetterButton( "Add POP3-Account", 
+				mAddPopButton = new BetterButton( "Add POP3 account", 
 													  new BMessage(BM_ADD_POP_ACCOUNT), 
 													  this),
-				mAddImapButton = new BetterButton( "Add IMAP-Account", 
+				mAddImapButton = new BetterButton( "Add IMAP account", 
 													   new BMessage(BM_ADD_IMAP_ACCOUNT), 
 													   this),
-				mRemoveButton = new BetterButton( "Remove Account", 
+				mRemoveButton = new BetterButton( "Remove account", 
 													  new BMessage( BM_REMOVE_ACCOUNT), 
 													  this),
 				0
@@ -234,7 +234,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new VGroup(
-					new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Account info",
 						new VGroup(
 							mAccountControl = new BmTextControl( "Account name:", 
 																			 false, 0, 25),
@@ -245,10 +245,10 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 								0
 							),
 							new HGroup( 
-								mAuthControl = new BmMenuControl( "Auth-method:", 
+								mAuthControl = new BmMenuControl( "Auth method:", 
 																			 new BPopUpMenu("")),
 								mCheckAndSuggestButton = new BetterButton(
-									"Check and Suggest",
+									"Check and suggest",
 									new BMessage(BM_CHECK_AND_SUGGEST), 
 									this, minimax(-1,-1,-1,-1)
 								),
@@ -261,7 +261,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							),
 							new Space( minimax(0,5,0,5)),
 							mHomeFolderControl = new BmMenuControl( 
-								"Home-Folder:", 
+								"Home folder:", 
 								new BmMenuController( 
 									"", this, 
 									new BMessage( BM_HOME_FOLDER_SELECTED), 
@@ -270,7 +270,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 								)
 							),
 							mFilterChainControl = new BmMenuControl( 
-								"Filter-Chain:", 
+								"Filter chain:", 
 								new BmMenuController( 
 									"", this, 
 									new BMessage( BM_FILTER_CHAIN_SELECTED), 
@@ -281,14 +281,14 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							0
 						)
 					),
-					new MBorder( M_LABELED_BORDER, 10, (char*)"Encryption & Security",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Encryption & security",
 						new VGroup(
 							mEncryptionControl 
 								= new BmMenuControl( "Encryption:", 
 															new BPopUpMenu("")),
 							new HGroup( 
 								mAcceptedCertControl 
-									= new BmTextControl("Server Certificate:"),
+									= new BmTextControl("Server certificate:"),
 								mClearAcceptedCertButton 
 									= new BetterButton( 
 										"Clear", 
@@ -299,7 +299,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							),
 							new HGroup( 
 								mClientCertControl 
-									= new BmTextControl("Client Certificate:"),
+									= new BmTextControl("Client certificate:"),
 								mSelectClientCertButton 
 									= new BetterButton( 
 										"Select" B_UTF8_ELLIPSIS,
@@ -323,7 +323,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							),
 							new Space( minimax(0,10,0,10)),
 							mCheckAccountControl = new BmCheckControl( 
-								"Include in Manual Check", 
+								"Include in manual check", 
 								new BMessage(BM_CHECK_MAIL_CHANGED), 
 								this
 							),
@@ -433,7 +433,7 @@ void BmPrefsRecvMailView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mAccListView, 
-		"This listview shows every receiving account you have defined."
+		"This list view shows every receiving account you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAccountControl, 
@@ -450,7 +450,7 @@ void BmPrefsRecvMailView::Initialize() {
 		"Here you can enter the password which \n"
 		"will be used during authentication.\n"
 		"(You can only edit this field if you\n"
-		"checked 'Store Password on Disk')."
+		"checked 'Store password on disk')."
 	);
 	TheBubbleHelper->SetHelp( 
 		mClientCertControl, 
@@ -488,7 +488,7 @@ void BmPrefsRecvMailView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mCheckAccountControl, 
 		"Check this if you want to check this account \n"
-		"when pressing the 'Check'-button."
+		"when pressing the 'Check' button."
 	);
 	TheBubbleHelper->SetHelp( 
 		mCheckEveryControl, 
@@ -556,13 +556,13 @@ void BmPrefsRecvMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mHomeFolderControl, 
-		"Here you can select the mail-folder where all mails \n"
+		"Here you can select the mail folder where all mails \n"
 		"received through this account shall be filed into by default.\n"
-		"N.B.: Mail-filters will overrule this setting."
+		"N.B.: Mail filters will overrule this setting."
 	);
 	TheBubbleHelper->SetHelp( 
 		mFilterChainControl, 
-		"Here you can select the filter-chain to be used \n"
+		"Here you can select the filter chain to be used \n"
 		"for every mail received through this account."
 	);
 	TheBubbleHelper->SetHelp( 
@@ -999,11 +999,11 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Remove Mail-Account", 
+						"Remove mail account", 
 						(BmString("Are you sure about removing the account <") 
 							<< mCurrAcc->Name() << ">?").String(),
-						"Remove Account and its Identities", 
-						"Remove Account, Keep Identities", 
+						"Remove account and its identities", 
+						"Remove account, keep identities", 
 						"Cancel",
 						 B_WIDTH_AS_USUAL, B_WARNING_ALERT
 					);
@@ -1036,7 +1036,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					BmString complaint;
 					complaint = msg->FindString( MSG_COMPLAINT);
 					// first step, tell user about complaint:
-					BAlert* alert = new BAlert( "Sanity Check Failed", 
+					BAlert* alert = new BAlert( "Sanity check failed", 
 														 complaint.String(),
 													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);

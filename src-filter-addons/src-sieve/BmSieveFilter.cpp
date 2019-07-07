@@ -71,7 +71,7 @@ BLocker* BmSieveFilter::nSieveLock = NULL;
 #define BM_LOGNAME "Filter"
 
 const char* FILTER_SIEVE 			= "Sieve";
-const char* FILTER_SIEVE_SCRIPT 	= "Sieve-Script";
+const char* FILTER_SIEVE_SCRIPT 	= "Sieve-script";
 
 extern "C" {
 	const char* FilterKinds[] = {

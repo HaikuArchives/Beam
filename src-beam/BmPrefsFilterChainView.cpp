@@ -373,7 +373,7 @@ void BmChainedFilterView::HandleDrop( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterChainView::BmPrefsFilterChainView() 
-	:	inherited( "Filter-Chains")
+	:	inherited( "Filter chains")
 {
 	MBorder* borderl = NULL;
 	MBorder* borderr = NULL;
@@ -386,17 +386,17 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 					mFilterChainListView = new BmFilterChainView( 200, 150),
 					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 					| BM_SV_CAPTION,
-					"99 filter-chains"
+					"99 filter chains"
 				),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
 					mAddButton = new BetterButton( 
-						"Add Chain", 
+						"Add chain", 
 						new BMessage(BM_ADD_CHAIN), 
 						this
 					),
 					mRemoveButton = new BetterButton( 
-						"Remove Chain", 
+						"Remove chain", 
 						new BMessage( BM_REMOVE_CHAIN), 
 						this
 					),
@@ -409,10 +409,10 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 			new HGroup(
 				minimax( 400,250),
 				borderl = new MBorder( 
-					M_LABELED_BORDER, 10, (char*)"Filter-Chain Info",
+					M_LABELED_BORDER, 10, (char*)"Filter chain info",
 					new VGroup(
 						new HGroup( 
-							mChainControl = new BmTextControl( "Filter-Chain name:"),
+							mChainControl = new BmTextControl( "Filter chain name:"),
 							0
 						),
 						new BetterScrollView( 
@@ -434,7 +434,7 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				),
 				new Space( minimax(10, 0, 10, 1E5)),
 				borderr = new MBorder( 
-					M_LABELED_BORDER, 10, (char*)"Available Filters",
+					M_LABELED_BORDER, 10, (char*)"Available filters",
 					new BetterScrollView( 
 						minimax(200,120,1E5,1E5), 
 						mAvailableFilterListView = new BmFilterView( 200, 200),
@@ -447,7 +447,7 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 			B_FOLLOW_NONE
 		);
 
-	float buttonWidth = StringWidth( "Remove Chain")+20;
+	float buttonWidth = StringWidth( "Remove chain")+20;
 	mAddButton->ct_mpm.mini.x = mAddButton->ct_mpm.maxi.x
 		= mRemoveButton->ct_mpm.mini.x 
 		= mRemoveButton->ct_mpm.maxi.x 
@@ -479,8 +479,8 @@ void BmPrefsFilterChainView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mChainControl, 
-		"Here you can enter a name for this filter-chain.\n"
-		"This name is used to identify this filter-chain in Beam."
+		"Here you can enter a name for this filter chain.\n"
+		"This name is used to identify this filter chain in Beam."
 	);
 
 	mChainControl->SetTarget( this);
@@ -626,9 +626,9 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ADD_CHAIN: {
-				BmString key( "new filter-chain");
+				BmString key( "new filter chain");
 				for( int32 i=1; TheFilterChainList->FindItemByKey( key); ++i) {
-					key = BmString("new filter-chain_")<<i;
+					key = BmString("new filter chain_")<<i;
 				}
 				TheFilterChainList->AddItemToList( 
 										new BmFilterChain( key.String(), 
@@ -643,8 +643,8 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Remove Filter-Chain", 
-						(BmString("Are you sure about removing the filter-chain <") 
+						"Remove filter chain", 
+						(BmString("Are you sure about removing the filter chain <") 
 							<< mCurrFilterChain->Key() << ">?").String(),
 						"Remove", "Cancel", NULL, 
 						B_WIDTH_AS_USUAL, B_WARNING_ALERT

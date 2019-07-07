@@ -236,17 +236,17 @@ BmMainWindow::BmMainWindow()
 
 	mCheckButton->SetUpdateVariationsFunc( UpdateAccounts);
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
-	mReplyButton->AddActionVariation( "Reply To List", 
+	mReplyButton->AddActionVariation( "Reply to list", 
 												 new BMessage(BMM_REPLY_LIST));
-	mReplyButton->AddActionVariation( "Reply To Person", 
+	mReplyButton->AddActionVariation( "Reply to person", 
 												 new BMessage(BMM_REPLY_ORIGINATOR));
-	mReplyButton->AddActionVariation( "Reply To All", 
+	mReplyButton->AddActionVariation( "Reply to all", 
 												 new BMessage(BMM_REPLY_ALL));
-	mForwardButton->AddActionVariation( "Forward As Attachment", 
+	mForwardButton->AddActionVariation( "Forward as attachment", 
 													new BMessage(BMM_FORWARD_ATTACHED));
-	mForwardButton->AddActionVariation( "Forward Inline", 
+	mForwardButton->AddActionVariation( "Forward inline", 
 													new BMessage(BMM_FORWARD_INLINE));
-	mForwardButton->AddActionVariation( "Forward Inline (With Attachments)", 
+	mForwardButton->AddActionVariation( "Forward inline (with attachments)", 
 													new BMessage(BMM_FORWARD_INLINE_ATTACH));
 
 	mMailFolderView->TeamUpWith( mMailRefView);
@@ -284,26 +284,26 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	BmMenuController* subMenu;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( CreateMenuItem( "New Folder...", BMM_NEW_MAILFOLDER));
-	menu->AddItem( CreateMenuItem( "Rename Folder...", BMM_RENAME_MAILFOLDER));
-	menu->AddItem( CreateMenuItem( "Delete Folder", BMM_DELETE_MAILFOLDER));
-	menu->AddItem( CreateMenuItem( "Recache Folder", BMM_RECACHE_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "New folder" B_UTF8_ELLIPSIS, BMM_NEW_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Rename folder" B_UTF8_ELLIPSIS, BMM_RENAME_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Delete folder", BMM_DELETE_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Recache folder", BMM_RECACHE_MAILFOLDER));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
-	menu->AddItem( CreateMenuItem( "Print Message(s)...", BMM_PRINT, 
-											 "Print Message..."));
+	menu->AddItem( CreateMenuItem( "Page setup" B_UTF8_ELLIPSIS, BMM_PAGE_SETUP));
+	menu->AddItem( CreateMenuItem( "Print message(s)" B_UTF8_ELLIPSIS, BMM_PRINT, 
+											 "Print message" B_UTF8_ELLIPSIS));
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, 
-						CreateMenuItem( "Preferences...", BMM_PREFERENCES), 
+						CreateMenuItem( "Preferences" B_UTF8_ELLIPSIS, BMM_PREFERENCES), 
 						beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( 
-		new BmMenuController( "Show Log", this, 
+		new BmMenuController( "Show log", this, 
 									 new BMessage( BMM_SHOW_LOGFILE), 
 									 &BmGuiRosterBase::RebuildLogMenu, BM_MC_MOVE_RIGHT)
 	);
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
+	menu->AddItem( CreateMenuItem( "About Beam" B_UTF8_ELLIPSIS, B_ABOUT_REQUESTED));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED));
 	mMainMenuBar->AddItem( menu);
@@ -312,46 +312,46 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu = new BMenu( "Edit");
 	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
-	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
+	menu->AddItem( CreateMenuItem( "Select all", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Narrow Down Messages", BMM_NARROW_DOWN));
-	menu->AddItem( CreateMenuItem( "Find in Message", BMM_FIND));
-	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
+	menu->AddItem( CreateMenuItem( "Narrow down messages", BMM_NARROW_DOWN));
+	menu->AddItem( CreateMenuItem( "Find in message", BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find next", BMM_FIND_NEXT));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Set Time Span", BMM_SET_TIME_SPAN));
+	menu->AddItem( CreateMenuItem( "Set time span", BMM_SET_TIME_SPAN));
 	mMainMenuBar->AddItem( menu);
 
 	// Network
 	menu = new BMenu( "Network");
-	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
+	menu->AddItem( CreateMenuItem( "Check mail", BMM_CHECK_MAIL));
 	mAccountMenu = new BmMenuController( 
-		"Check Mail For", this,
+		"Check mail for", this,
 		new BMessage( BMM_CHECK_MAIL), 
 		&BmGuiRosterBase::RebuildRecvAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( mAccountMenu);
-	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
+	menu->AddItem( CreateMenuItem( "Check all accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
 	subMenu = new BmMenuController( 
-		"Send Pending Messages For", this,
+		"Send pending messages for", this,
 		new BMessage( BMM_SEND_PENDING), 
 		&BmGuiRosterBase::RebuildSmtpAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( subMenu);
-	menu->AddItem( CreateMenuItem( "Send All Pending Messages",
+	menu->AddItem( CreateMenuItem( "Send all pending messages",
 											 BMM_SEND_PENDING));
 	mMainMenuBar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New message" B_UTF8_ELLIPSIS, BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
 	mMailRefView->AddMailRefMenu( menu, this, false);
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
-	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
+	menu->AddItem( CreateMenuItem( "Toggle header mode", BMM_SWITCH_HEADER));
+	menu->AddItem( CreateMenuItem( "Show raw message", BMM_SWITCH_RAW));
 	mMainMenuBar->AddItem( menu);
 
 	// Help

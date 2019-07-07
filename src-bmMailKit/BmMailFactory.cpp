@@ -28,9 +28,9 @@ using namespace regexx;
 // #pragma mark --- BmMailFactory ---
 /******************************************************************************/
 
-const char* const BmMailFactory::BM_QUOTE_AUTO_WRAP = 		"Auto Wrap";
+const char* const BmMailFactory::BM_QUOTE_AUTO_WRAP = 		"Auto wrap";
 const char* const BmMailFactory::BM_QUOTE_SIMPLE = 			"Simple";
-const char* const BmMailFactory::BM_QUOTE_PUSH_MARGIN = 	"Push Margin";
+const char* const BmMailFactory::BM_QUOTE_PUSH_MARGIN = 	"Push margin";
 
 /*------------------------------------------------------------------------------*\
 	AddBaseMail()

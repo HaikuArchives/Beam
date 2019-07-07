@@ -47,27 +47,27 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailReadView::BmPrefsMailReadView() 
-	:	inherited( "Reading Mail")
+	:	inherited( "Reading mail")
 {
 	MView* view = 
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Display Options",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail display options",
 				new VGroup(
 					mMarkAsReadDelayControl = new BmTextControl( 
 						"Delay (in ms) before marking mails as read:"
 					),
 					new Space( minimax(0,5,0,5)),
 					mHeaderListSmallControl = new BmTextControl( 
-						"Fields in 'small'-header mode:"
+						"Fields in 'small' header mode:"
 					),
 					mHeaderListLargeControl = new BmTextControl( 
-						"Fields in 'large'-header mode:"
+						"Fields in 'large' header mode:"
 					),
 					new Space( minimax(0,5,0,5)),
 					new HGroup(
 						mTimeModeInHeaderViewControl = new BmMenuControl( 
-							"Time-Mode used in headerview:", new BPopUpMenu("")
+							"Time-mode used in header view:", new BPopUpMenu("")
 						),
 						new Space(),
 						0
@@ -80,7 +80,7 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 						ThePrefs->GetBool("SelectNextMailAfterDelete",true)
 					),
 					mUseSwatchTimeInRefViewControl = new BmCheckControl( 
-						"Use Swatch Time in mail-listview", 
+						"Use Swatch time in mail list view", 
 						new BMessage(BM_USE_SWATCHTIME_CHANGED), 
 						this, 
 						ThePrefs->GetBool("UseSwatchTimeInRefView",false)
@@ -89,10 +89,10 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 				)
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Attachment Options",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail attachment options",
 				new VGroup(
 					mShowDecodedLengthControl = new BmCheckControl( 
-						"Show Real (Decoded) Length", 
+						"Show real (decoded) length", 
 						new BMessage(BM_SHOW_DECODED_LENGTH_CHANGED), 
 						this, ThePrefs->GetBool("ShowDecodedLength",true)
 					),
@@ -137,7 +137,7 @@ void BmPrefsMailReadView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mHeaderListSmallControl, 
 		"Here you can enter the list of header-fields that will be displayed\n"
-		"in the 'Small'-mode of the mailheader-view.\n"
+		"in the 'Small' mode of the mailheader view.\n"
 		"Just enter the header-fields in the order you wish them to appear\n"
 		"and separate them by a ',' (comma).\n"
 		"In order to display a field only if it actually has content, put\n"
@@ -148,7 +148,7 @@ void BmPrefsMailReadView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mHeaderListLargeControl, 
 		"Here you can enter the list of header-fields that will be displayed\n"
-		"in the 'Large'-mode of the mailheader-view.\n"
+		"in the 'Large' mode of the mailheader view.\n"
 		"Just enter the header-fields in the order you wish them to appear\n"
 		"and separate them by a ',' (comma).\n"
 		"In order to display a field only if it actually has content, put\n"
@@ -158,7 +158,7 @@ void BmPrefsMailReadView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mMarkAsReadDelayControl, 
-		"When you select a new mail and it is displayed in the mail-view\n"
+		"When you select a new mail and it is displayed in the mail view\n"
 		"it will be marked as 'read', after a certain delay.\n"
 		"You can enter the delay into this field."
 	);
@@ -171,21 +171,21 @@ void BmPrefsMailReadView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mUseSwatchTimeInRefViewControl, 
-		"If you check this, the datetime-columns in the list of mails\n"
-		"will be displayed in Swatch Time (0-999).\n"
-		"If you leave this unchecked, time-columns will be\n"
+		"If you check this, the datetime- olumns in the list of mails\n"
+		"will be displayed in Swatch time (0-999).\n"
+		"If you leave this unchecked, time columns will be\n"
 		"displayed in local time."
 	);
 	TheBubbleHelper->SetHelp( 
 		mTimeModeInHeaderViewControl, 
 		"Here you can select the time-base that will be used\n"
-		"for the 'Date:'-field when displaying the mail-header:\n"
+		"for the 'Date:'-field when displaying the mail header:\n"
 		"    'Local':  means that the time will be converted into\n"
 		"              the time-base that is used on your machine\n"
 		"              (i.e. it will indicate the time from your\n"
 		"              perspective)\n"
 		"    'Native': means that the time will be displayed\n"
-		"              just as it is contained in the mail-text\n"
+		"              just as it is contained in the mail text\n"
 		"              (i.e. it will indicate the time from the \n"
 		"              perspective of the mail's sender).\n"
 		"    'Swatch': means that the time will be converted into\n"

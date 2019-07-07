@@ -1227,7 +1227,7 @@ void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
 											    int32 jobSpecifier) {
 	if (fScrollView)
 		fScrollView->SetBusy();
-	UpdateCaption( "tracking...");
+	UpdateCaption( "tracking" B_UTF8_ELLIPSIS);
 	inheritedController::StartJob( model, startInNewThread, jobSpecifier);
 }
 
@@ -1263,7 +1263,7 @@ void BmListViewController::WriteStateInfo() {
 	try {
 		BmString stateInfoFilename = StateInfoFilename( false);
 		if (this->Archive( &archive, Hierarchical()) != B_OK)
-			BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")
+			BM_THROW_RUNTIME( BmString("Unable to archive state-info for ")
 										<< Name());
 		if ((err = stateInfoFile.SetTo( 
 			BeamRoster->StateInfoFolder(), 
@@ -1299,7 +1299,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 		}
 	}
 	if (ret != B_OK) {
-		BM_SHOWERR( BmString("Could not archive State-Info for ") 
+		BM_SHOWERR( BmString("Could not archive state-info for ") 
 							<< ModelName() << "\n\tError: "<< strerror( ret));
 	}
 	return ret;
