@@ -480,7 +480,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						"Wrong Source Charset", 
 						"The selected source charset is probably incorrect, "
 							"as some of the characters couldn't be converted to UTF8.",
-						"Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+						"OK", NULL, NULL, B_WIDTH_AS_USUAL,
 						B_WARNING_ALERT
 					);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -973,25 +973,25 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 		theMenu->AddItem( item);
 	
 		theMenu->AddSeparatorItem();
-		item = new BMenuItem( "Save Attachment As...", 
+		item = new BMenuItem( "Save attachment as" B_UTF8_ELLIPSIS, 
 									 new BMessage( BM_BODYPARTVIEW_SAVE_ATTACHMENT));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
 		if (!mEditable) {
 			theMenu->AddSeparatorItem();
-			item = new BMenuItem( "Remove Attachment from Mail...", 
+			item = new BMenuItem( "Remove attachment from mail" B_UTF8_ELLIPSIS, 
 										 new BMessage( BM_BODYPARTVIEW_DELETE_ATTACHMENT));
 			item->SetTarget( this);
 			theMenu->AddItem( item);
 		}
 	} else {
-		BMenu* menu = new BMenu( "Specify Source Charset");
+		BMenu* menu = new BMenu( "Specify source charset");
 		menu->SetFont( &font);
 		BeamGuiRoster->AddCharsetMenu( menu, this, BM_BODYPARTVIEW_SRC_CHARSET);
 		theMenu->AddItem( menu);
 		theMenu->AddSeparatorItem();
-		menu = new BMenu( "Select Destination Charset");
+		menu = new BMenu( "Select destination charset");
 		menu->SetFont( &font);
 		BeamGuiRoster->AddCharsetMenu( menu, this, BM_BODYPARTVIEW_DEST_CHARSET);
 		theMenu->AddItem( menu);

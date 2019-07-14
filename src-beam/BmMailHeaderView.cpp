@@ -199,7 +199,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	BMenu* createAndEditPersonMenu = NULL;
 	BMenu* createPersonMenu = NULL;
 	BMenu* editPersonMenu = NULL;
-	BMenu* mailToMenu = new BMenu("Mail To");
+	BMenu* mailToMenu = new BMenu("Mail to");
 	mailToMenu->SetFont( &menuFont);
 	BMenuItem* item = NULL;
 	uint16 count = 0;
@@ -213,12 +213,12 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 		mailToMenu->AddItem( item);
 		if (!ThePeopleList->FindPersonByEmail(iter->AddrSpec())) {
 			if (!createAndEditPersonMenu) {
-				createAndEditPersonMenu = new BMenu("Import & Edit Address");
+				createAndEditPersonMenu = new BMenu("Import & edit address");
 				createAndEditPersonMenu->SetFont( &menuFont);
 			}
 	
 			if (!createPersonMenu) {
-				createPersonMenu = new BMenu("Import Address");
+				createPersonMenu = new BMenu("Import address");
 				createPersonMenu->SetFont( &menuFont);
 			}
 	
@@ -238,7 +238,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 			count++;
 		} else {
 			if (!editPersonMenu) {
-				editPersonMenu = new BMenu("Edit Address");
+				editPersonMenu = new BMenu("Edit address");
 				editPersonMenu->SetFont( &menuFont);
 			}
 			BMessage* editMsg = new BMessage(BMM_EDIT_PERSON_WITH_ADDR);
@@ -250,12 +250,12 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	}
 	if (count > 1) {
 		createPersonMenu->AddSeparatorItem();
-		item = new BMenuItem( "<All Addresses>", allMsg);
+		item = new BMenuItem( "<All addresses>", allMsg);
 		item->SetTarget( be_app);
 		createPersonMenu->AddItem( item);
 		BMessage* allCreateAndEditMsg = new BMessage(*allMsg);
 		allCreateAndEditMsg->AddBool("edit", true);
-		item = new BMenuItem( "<All Addresses>", allCreateAndEditMsg);
+		item = new BMenuItem( "<All addresses>", allCreateAndEditMsg);
 		item->SetTarget( be_app);
 		createAndEditPersonMenu->AddItem( item);
 	}
@@ -267,7 +267,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 		menu->AddItem(createPersonMenu);
 	if (editPersonMenu)
 		menu->AddItem(editPersonMenu);
-	item = new BMenuItem( "Copy to Clipboard", new BMessage(B_COPY));
+	item = new BMenuItem( "Copy to clipboard", new BMessage(B_COPY));
 	item->SetTarget(this);
 	menu->AddItem(item);
 
@@ -480,14 +480,14 @@ void BmMailHeaderView::BmMailHeaderFieldView::ShowMenu( BPoint point)
 		headerView->DisplayMode() == BmMailHeaderView::SMALL_HEADERS
 	);
 	theMenu->AddItem( item);
-	item = new BMenuItem( "Large Header", new BMessage( BM_HEADERVIEW_LARGE));
+	item = new BMenuItem( "Large header", new BMessage( BM_HEADERVIEW_LARGE));
 	item->SetTarget( headerView);
 	item->SetMarked( 
 		headerView->DisplayMode() == BmMailHeaderView::LARGE_HEADERS
 	);
 	theMenu->AddItem( item);
 	item = new BMenuItem( 
-		"Full Header (raw)", new BMessage( BM_HEADERVIEW_FULL)
+		"Full header (raw)", new BMessage( BM_HEADERVIEW_FULL)
 	);
 	item->SetTarget( headerView);
 	item->SetMarked( 
@@ -495,13 +495,13 @@ void BmMailHeaderView::BmMailHeaderFieldView::ShowMenu( BPoint point)
 	);
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
-	item = new BMenuItem( "Show info from Resent-fields if present", 
+	item = new BMenuItem( "Show info from resent-fields if present", 
 								 new BMessage( BM_HEADERVIEW_SWITCH_RESENT));
 	item->SetTarget( headerView);
 	item->SetMarked( headerView->ShowRedirectFields());
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
-	item = new BMenuItem( "Copy Header to Clipboard", 
+	item = new BMenuItem( "Copy header to clipboard", 
 								 new BMessage( BM_HEADERVIEW_COPY_HEADER));
 	item->SetTarget( headerView);
 	theMenu->AddItem( item);

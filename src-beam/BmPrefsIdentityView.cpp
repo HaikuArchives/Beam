@@ -118,13 +118,13 @@ BmRecvIdentView::BmRecvIdentView( int32 width, int32 height)
 		flags |= CLV_TELL_ITEMS_WIDTH;
 
 	AddColumn( new CLVColumn( "Identity", 80.0, flags, 50.0));
-	AddColumn( new CLVColumn( "Real Name", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Real name", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Mailaddress", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Aliases", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "Receiving Account", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "F", 20.0, flags, 20.0, "(F)allback Identity?"));
+	AddColumn( new CLVColumn( "Receiving account", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "F", 20.0, flags, 20.0, "(F)allback identity?"));
 	AddColumn( new CLVColumn( "Signature", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "Sending Account", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Sending account", 80.0, flags, 40.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_KEY);
@@ -198,26 +198,26 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 				"99 identities"
 			),
 			new HGroup(
-				mAddButton = new BetterButton( "Add Identity", 
+				mAddButton = new BetterButton( "Add identity", 
 												  new BMessage(BM_ADD_IDENTITY), 
 												  this),
-				mRemoveButton = new BetterButton("Remove Identity", 
+				mRemoveButton = new BetterButton("Remove identity", 
 													 new BMessage( BM_REMOVE_IDENTITY), 
 													 this),
 				0
 			),
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Identity Info",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Identity info",
 					new VGroup(
 						mIdentityControl = new BmTextControl( "Identity name:", 
 																		  false, 0, 25),
 						mRealNameControl = new BmTextControl( "Real name:"),
 						mMailAddrControl = new BmTextControl( "Mail address:"),
 						new HGroup(
-							mReplyToControl = new BmTextControl( "Reply-To:"),
+							mReplyToControl = new BmTextControl( "Reply to:"),
 							mSpecialHeadersButton = new BetterButton( 
-								"Special Headers...", 
+								"Special headers" B_UTF8_ELLIPSIS, 
 							   new BMessage(BM_SET_SPECIAL_HEADERS), 
 							   this, minimax(-1,-1,-1,-1)
 							),
@@ -226,9 +226,9 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
 						mRecvControl = new BmMenuControl( 
-							"Receiving Account:", 
+							"Receiving account:", 
 							new BmMenuController( 
-								"Receiving Account:", 
+								"Receiving account:", 
 								this, 
 								new BMessage( BM_RECV_SELECTED),
 								&BmGuiRosterBase::RebuildRecvAccountMenu, 
@@ -237,9 +237,9 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						),
 						new Space( minimax(0,5,0,5)),
 						mSmtpControl = new BmMenuControl( 
-							"SMTP-account:", 
+							"SMTP account:", 
 							new BmMenuController( 
-								"SMTP-account:", 
+								"SMTP account:", 
 								this, 
 								new BMessage( BM_SMTP_SELECTED),
 								&BmGuiRosterBase::RebuildSmtpAccountMenu, 
@@ -265,7 +265,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						new VGroup(
 							mIsBucketControl 
 								= new BmCheckControl( 
-									"Use as fallback identity for the Receiving Account", 
+									"Use as fallback identity for the receiving account", 
 									new BMessage(BM_IS_BUCKET_CHANGED), 
 									this
 								),
@@ -321,7 +321,7 @@ void BmPrefsIdentityView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mIdentListView, 
-		"This listview shows every identity you have defined."
+		"This list view shows every identity you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mIdentityControl, 
@@ -330,13 +330,13 @@ void BmPrefsIdentityView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mMailAddrControl, 
-		"Here you can define the mail-address this identity will use.\n"
-		"Beam creates the mail-address automatically,\n"
+		"Here you can define the mail address this identity will use.\n"
+		"Beam creates the mail address automatically,\n"
 		"but you can override this by specifying the address here."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAliasesControl, 
-			"Some email-providers allow definition of aliases for mail-accounts.\n"
+			"Some email providers allow definition of aliases for mail accounts.\n"
 			"In this case mails addressed to any of the aliases will be\n"
 			"delivered to the real account. If you have defined such aliases,\n"
 			"you can enter them here.\n\n"
@@ -349,9 +349,9 @@ void BmPrefsIdentityView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mReplyToControl, 
-		"Here you can specify a mail-address that should receive the answers\n"
+		"Here you can specify a mail address that should receive the answers\n"
 		"to the mails you sent (using this identity).\n"
-		"If you leave this empty, the answers will go to the mail-address\n"
+		"If you leave this empty, the answers will go to the mail address\n"
 		"given above (or the default)."
 		"Use this only if you want to explicitly redirect answers to somewhere\n"
 		"else."
@@ -517,7 +517,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 										(screen.Height()+h)/2);
 				TextEntryAlert* alert = 
 					new TextEntryAlert( 
-						"Edit Special Headers", 
+						"Edit special headers", 
 						"Please enter any special headers below, "
 						"just as they would appear in a mail.\n\n"
 						"Here's an example: \n"
@@ -563,7 +563,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert 
-						= new BAlert( "Remove Mail-Identity", 
+						= new BAlert( "Remove mail identity", 
 										  (BmString(
 										  		"Are you sure about removing the "
 										  		"identity <") << mCurrIdent->Name() 
@@ -590,7 +590,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 					BmString complaint;
 					complaint = msg->FindString( MSG_COMPLAINT);
 					// first step, tell user about complaint:
-					BAlert* alert = new BAlert( "Sanity Check Failed", 
+					BAlert* alert = new BAlert( "Sanity check failed", 
 														 complaint.String(),
 													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);

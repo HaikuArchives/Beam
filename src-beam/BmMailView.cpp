@@ -1233,21 +1233,21 @@ void BmMailView::ShowMenu( BPoint point) {
 
 	BMenuItem* item = NULL;
 	if (!mOutbound) {
-		item = new BMenuItem( "Show All MIME-Bodies", 
+		item = new BMenuItem( "Show all MIME bodies", 
 									 new BMessage( mBodyPartView->ShowAllParts()
 															  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
 															  : BM_BODYPARTVIEW_SHOWALL));
 		item->SetTarget( mBodyPartView);
 		item->SetMarked( mBodyPartView->ShowAllParts());
 		theMenu->AddItem( item);
-		item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw()
+		item = new BMenuItem( "Show raw message", new BMessage( ShowRaw()
 									 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
 		item->SetTarget( this);
 		item->SetMarked( ShowRaw());
 		theMenu->AddItem( item);
 
 		item = new BMenuItem( 
-			"Separate Inlines", 
+			"Separate inlines", 
 			new BMessage( 
 			 	ShowInlinesSeparately() 
 					 ? BM_MAILVIEW_SHOWINLINES_CONCATENATED
@@ -1264,7 +1264,7 @@ void BmMailView::ShowMenu( BPoint point) {
 			int32 currPos = OffsetAt( point);
 			BmTextRunMap::const_iterator run = TextRunInfoAt( currPos);
 			msg->AddString( "url", GetTextForTextrun( run).String());
-			item = new BMenuItem( "Copy URL to Clipboard", msg);
+			item = new BMenuItem( "Copy URL to clipboard", msg);
 			item->SetTarget( this);
 			theMenu->AddItem( item);
 			theMenu->AddSeparatorItem();
@@ -1273,7 +1273,7 @@ void BmMailView::ShowMenu( BPoint point) {
 		if (mCurrMail && mCurrMail->Body()) {
 			BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
 			if (textBody) {
-				BMenu* menu = new BMenu( "Try Charset");
+				BMenu* menu = new BMenu( "Try charset");
 				menu->SetFont( &font);
 				BeamGuiRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
 				BmString currCharset = textBody->SuggestedCharset();

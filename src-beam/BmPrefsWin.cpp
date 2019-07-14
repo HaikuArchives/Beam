@@ -231,7 +231,7 @@ ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, mPrefsListView);
-	item->SetColumnContent( 1, "Sending Mail");
+	item->SetColumnContent( 1, "Sending mail");
 	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
 
@@ -240,7 +240,7 @@ ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, mPrefsListView);
-	item->SetColumnContent( 1, "Receiving Mail");
+	item->SetColumnContent( 1, "Receiving mail");
 	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
 
@@ -258,7 +258,7 @@ ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, mPrefsListView);
-	item->SetColumnContent( 1, "Filtering Mail");
+	item->SetColumnContent( 1, "Filtering mail");
 	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
 
@@ -354,8 +354,8 @@ bool BmPrefsWin::QuitRequested() {
 		if (IsMinimized())
 			Minimize( false);
 		Activate();
-		BAlert* alert = new BAlert( "title", "The preferences have changed. Would you like to save changes before closing?",
-											 "Cancel", "Don't Save", "Save",
+		BAlert* alert = new BAlert( "title", "The preferences have changed. Would you like to save the changes before closing?",
+											 "Cancel", "Don't save", "Save",
 											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
 		alert->SetShortcut( 0, B_ESCAPE);
 		int32 result = alert->Go();

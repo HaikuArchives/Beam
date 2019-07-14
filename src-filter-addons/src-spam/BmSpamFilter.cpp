@@ -2515,7 +2515,7 @@ int32 BmSpamFilterPrefs::StartSpamometer( void* data)
 			<< " --rst=" << filterAddon->D.mSpamThreshold 
 			<< " --rtt=" << filterAddon->D.mTofuThreshold
 			<< " --do-training";
-		BmString trainCmd("Terminal -t \"Beam SPAM-Filter Training Session\"");
+		BmString trainCmd("Terminal -t \"Beam SPAM-filter training session\"");
 		trainCmd << " /bin/sh -c '" << spamometer << ";"
 					<<	" read -p \"press <Return> to close window\"'";
 		system(trainCmd.String());
@@ -2546,7 +2546,7 @@ int32 BmSpamFilterPrefs::StartSpamometer( void* data)
 			b << "Bummer!";
 		}
 		BAlert* alert = new BAlert( 
-			"Train SPAM-Filter", s.String(), b.String(), NULL, NULL, 
+			"Train SPAM-filter", s.String(), b.String(), NULL, NULL, 
 			B_WIDTH_AS_USUAL, B_WARNING_ALERT
 		);
 		alert->SetShortcut( 0, B_ESCAPE);
@@ -2600,11 +2600,11 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 			mCurrFilterAddon->D.mSpamThreshold = int8(spamThr);
 			mCurrFilterAddon->D.mTofuThreshold = int8(tofuThr);
 			char buf[10];
-			mSpamThresholdBar->Reset("Resulting Spam Threshold: ");
+			mSpamThresholdBar->Reset("Resulting spam threshold: ");
 			mSpamThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", spamThr);
 			mSpamThresholdBar->Update(float(spamThr), buf);
-			mTofuThresholdBar->Reset("Resulting Tofu Threshold: ");
+			mTofuThresholdBar->Reset("Resulting tofu threshold: ");
 			mTofuThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", tofuThr);
 			mTofuThresholdBar->Update(float(tofuThr), buf);

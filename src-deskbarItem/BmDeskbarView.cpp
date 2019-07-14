@@ -479,17 +479,17 @@ void BmDeskbarView::ShowMenu( BPoint point) {
 	BFont menuFont( *be_plain_font);
 	theMenu->SetFont( &menuFont);
 
-	item = new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL));
+	item = new BMenuItem( "Check mail", new BMessage( BMM_CHECK_MAIL));
 	item->SetTarget( BMessenger( BM_APP_SIG));
 	theMenu->AddItem( item);
 
 	theMenu->AddSeparatorItem();
-	item = new BMenuItem( "New Message...", new BMessage( BMM_NEW_MAIL));
+	item = new BMenuItem( "New message" B_UTF8_ELLIPSIS, new BMessage( BMM_NEW_MAIL));
 	item->SetTarget( BMessenger( BM_APP_SIG));
 	theMenu->AddItem( item);
 
 	theMenu->AddSeparatorItem();
-	item = new BMenuItem( "Reset Icon", new BMessage( BMM_RESET_ICON));
+	item = new BMenuItem( "Reset icon", new BMessage( BMM_RESET_ICON));
 	item->SetTarget( this);
 	theMenu->AddItem( item);
 

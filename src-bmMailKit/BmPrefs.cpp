@@ -585,20 +585,20 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	if (!shortcutsMsg)
 		shortcutsMsg = new BMessage;
 	SetShortcutIfNew( shortcutsMsg, "About Beam", "");
-	SetShortcutIfNew( shortcutsMsg, "Check Mail", "M");
-	SetShortcutIfNew( shortcutsMsg, "Check All Accounts", "<SHIFT>M");
+	SetShortcutIfNew( shortcutsMsg, "Check mail", "M");
+	SetShortcutIfNew( shortcutsMsg, "Check all accounts", "<SHIFT>M");
 	SetShortcutIfNew( shortcutsMsg, "Close", "W");
 	SetShortcutIfNew( shortcutsMsg, "Copy", "C");
 	SetShortcutIfNew( shortcutsMsg, "Cut", "X");
-	SetShortcutIfNew( shortcutsMsg, "Delete Folder", "");
-	SetShortcutIfNew( shortcutsMsg, "Edit As New", "");
+	SetShortcutIfNew( shortcutsMsg, "Delete folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Edit as new", "");
 	SetShortcutIfNew( shortcutsMsg, "Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Find", "F");
-	SetShortcutIfNew( shortcutsMsg, "Find Messages", "<SHIFT>F");
-	SetShortcutIfNew( shortcutsMsg, "Find Next", "G");
-	SetShortcutIfNew( shortcutsMsg, "Forward As Attachment", "<SHIFT>J");
-	SetShortcutIfNew( shortcutsMsg, "Forward Inline", "J");
-	SetShortcutIfNew( shortcutsMsg, "Forward Inline (With Attachments)", "");
+	SetShortcutIfNew( shortcutsMsg, "Find messages", "<SHIFT>F");
+	SetShortcutIfNew( shortcutsMsg, "Find next", "G");
+	SetShortcutIfNew( shortcutsMsg, "Forward as attachment", "<SHIFT>J");
+	SetShortcutIfNew( shortcutsMsg, "Forward inline", "J");
+	SetShortcutIfNew( shortcutsMsg, "Forward inline (with attachments)", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsDraft", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsForwarded", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsNew", "");
@@ -607,33 +607,33 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "MarkAsRedirected", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsReplied", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsSent", "");
-	SetShortcutIfNew( shortcutsMsg, "Move To Trash", "T");
-	SetShortcutIfNew( shortcutsMsg, "Narrow Down Messages", "<SHIFT>N");
-	SetShortcutIfNew( shortcutsMsg, "New Folder", "");
-	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
-	SetShortcutIfNew( shortcutsMsg, "Next Message", "<DOWN_ARROW>");
-	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
+	SetShortcutIfNew( shortcutsMsg, "Move to Trash", "T");
+	SetShortcutIfNew( shortcutsMsg, "Narrow down messages", "<SHIFT>N");
+	SetShortcutIfNew( shortcutsMsg, "New folder", "");
+	SetShortcutIfNew( shortcutsMsg, "New message", "N");
+	SetShortcutIfNew( shortcutsMsg, "Next message", "<DOWN_ARROW>");
+	SetShortcutIfNew( shortcutsMsg, "Page setup", "");
 	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
 	SetShortcutIfNew( shortcutsMsg, "Preferences", "<SHIFT>P");
-	SetShortcutIfNew( shortcutsMsg, "Previous Message", "<UP_ARROW>");
-	SetShortcutIfNew( shortcutsMsg, "Print Message", "P");
+	SetShortcutIfNew( shortcutsMsg, "Previous message", "<UP_ARROW>");
+	SetShortcutIfNew( shortcutsMsg, "Print message", "P");
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
-	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Recache folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
 	SetShortcutIfNew( shortcutsMsg, "Redo", "<SHIFT>Z");
-	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
-	SetShortcutIfNew( shortcutsMsg, "Reply (Auto)", "R");
-	SetShortcutIfNew( shortcutsMsg, "Reply To List", "");
-	SetShortcutIfNew( shortcutsMsg, "Reply To Person", "");
-	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");
+	SetShortcutIfNew( shortcutsMsg, "Rename folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply (auto)", "R");
+	SetShortcutIfNew( shortcutsMsg, "Reply to list", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply to person", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply to all", "<SHIFT>R");
 	SetShortcutIfNew( shortcutsMsg, "SaveMail", "S");
-	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
-	SetShortcutIfNew( shortcutsMsg, "Send All Pending Messages", "");
-	SetShortcutIfNew( shortcutsMsg, "Send Mail Now", "M");
-	SetShortcutIfNew( shortcutsMsg, "Send Mail Later", "<SHIFT>M");
-	SetShortcutIfNew( shortcutsMsg, "Set Time Span", "<SHIFT>S");
-	SetShortcutIfNew( shortcutsMsg, "Show Raw Message", "<SHIFT>H");
-	SetShortcutIfNew( shortcutsMsg, "Toggle Header Mode", "H");
+	SetShortcutIfNew( shortcutsMsg, "Select all", "A");
+	SetShortcutIfNew( shortcutsMsg, "Send all pending messages", "");
+	SetShortcutIfNew( shortcutsMsg, "Send mail now", "M");
+	SetShortcutIfNew( shortcutsMsg, "Send mail later", "<SHIFT>M");
+	SetShortcutIfNew( shortcutsMsg, "Set time span", "<SHIFT>S");
+	SetShortcutIfNew( shortcutsMsg, "Show raw message", "<SHIFT>H");
+	SetShortcutIfNew( shortcutsMsg, "Toggle header mode", "H");
 	SetShortcutIfNew( shortcutsMsg, "Undo", "Z");
 	return shortcutsMsg;
 }
@@ -755,7 +755,7 @@ void BmPrefs::SetLoglevels() {
 			s << "0";
 	}
 	BM_LOG3( BM_LogApp, 
-				BmString("Initialized loglevels to binary value ") << s);
+				BmString("Initialized log levels to binary value ") << s);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -871,7 +871,7 @@ BmString BmPrefs::GetString( const char* name) {
 			mPrefsMsg.AddString( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BmString("The Preferences-field ") << name 
+			BM_SHOWERR( BmString("The preferences-field ") << name 
 								<< " of type string is unknown");
 			return "";
 		}
@@ -922,7 +922,7 @@ bool BmPrefs::GetBool( const char* name) {
 			mPrefsMsg.AddBool( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BmString("The Preferences-field ") << name << " of type bool is unknown");
+			BM_SHOWERR( BmString("The preferences-field ") << name << " of type bool is unknown");
 			return false;
 		}
 	}
@@ -972,7 +972,7 @@ int32 BmPrefs::GetInt( const char* name) {
 			mPrefsMsg.AddInt32( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BmString("The Preferences-field ") << name 
+			BM_SHOWERR( BmString("The preferences-field ") << name 
 								<< " of type int32 is unknown");
 			return 0;
 		}
@@ -1024,7 +1024,7 @@ BMessage* BmPrefs::GetMsg( const char* name) {
 			mPrefsMsg.AddMessage( name, msg);
 			return msg;
 		} else {
-			BM_SHOWERR( BmString("The Preferences-field ") << name 
+			BM_SHOWERR( BmString("The preferences-field ") << name 
 								<< " of type message is unknown");
 			delete msg;
 			return NULL;

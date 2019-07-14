@@ -230,13 +230,13 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
 	if ((err = mailDir.InitCheck()) != B_OK)
-		BM_THROW_RUNTIME( BmString("Could not access \nmail-folder <") << Name() 
+		BM_THROW_RUNTIME( BmString("Could not access \nmail folder <") << Name() 
 									<< "> \n\nError:" << strerror(err));
 	time_t mtime;
 	BM_LOG3( BM_LogMailTracking, 
 				"BmMailFolder::CheckIfModifiedSince() - getting modification time");
 	if ((err = mailDir.GetModificationTime( &mtime)) != B_OK)
-		BM_THROW_RUNTIME( BmString("Could not get mtime \nfor mail-folder <") 
+		BM_THROW_RUNTIME( BmString("Could not get mtime \nfor mail folder <") 
 									<< Name() << "> \n\nError:" << strerror(err));
 	BM_LOG3( BM_LogMailTracking, 
 				BmString("checking if ") << Name() << ": (" << mtime << " > " 

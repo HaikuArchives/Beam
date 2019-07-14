@@ -354,7 +354,7 @@ void BmMailMonitorWorker::EntryCreated( BmMailFolder* parent, node_ref& nref,
 		// a new mail-folder has been created, we add 
 		// it to our list:
 		BM_LOG2( BM_LogMailTracking, 
-					BmString("New mail-folder <") << eref.name 
+					BmString("New mail folder <") << eref.name 
 						<< "," << nref.node << "> detected.");
 		TheMailFolderList->AddMailFolder( eref, nref.node, parent, st.st_mtime);
 	} else {
@@ -388,7 +388,7 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 	if (folder) {
 		// a folder has been deleted, we remove it from our list:
 		BM_LOG2( BM_LogMailTracking, 
-					BmString("Removal of mail-folder <") 
+					BmString("Removal of mail folder <") 
 						<< nref.node << "> detected.");
 		BmAutolockCheckGlobal lock( TheMailFolderList->ModelLocker());
 		if (!lock.IsLocked())
@@ -446,7 +446,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 		if (erefFrom.directory == eref.directory) {
 			// rename only, we take the short path:
 			BM_LOG2( BM_LogMailTracking, 
-						BmString("Rename of mail-folder <") 
+						BmString("Rename of mail folder <") 
 							<< eref.name << "," << nref.node 
 							<< "> detected.");
 			folder->UpdateName( eref);
@@ -471,7 +471,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 				// ...and scan for potential sub-folders:
 				TheMailFolderList->InitializeSubFolders( folder.Get(), 1);
 				BM_LOG2( BM_LogMailTracking, 
-							BmString("Move of mail-folder <") 
+							BmString("Move of mail folder <") 
 								<< eref.name << "," << nref.node 
 								<< "> detected.\nFrom: " 
 								<< (oldParent
@@ -484,7 +484,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 			} else {
 				// folder exists in our structure
 				BM_LOG2( BM_LogMailTracking, 
-							BmString("Move of mail-folder <") 
+							BmString("Move of mail folder <") 
 								<< eref.name << "," << nref.node 
 								<< "> detected.\nFrom: "
 								<< (oldParent

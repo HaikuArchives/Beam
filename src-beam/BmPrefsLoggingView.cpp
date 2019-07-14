@@ -48,13 +48,13 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsLoggingView::BmPrefsLoggingView() 
-	:	inherited( "Logging Messages")
+	:	inherited( "Logging messages")
 {
 	MView* view = 
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Logging",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of logging",
 					new VGroup(
 						mLogPopControl = new BmMenuControl( "Receiving mail:", 
 																		new BPopUpMenu(""), 
@@ -72,7 +72,7 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 						0
 					)
 				),
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Debug-Logging",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of debug logging",
 					new VGroup(
 						mLogMailTrackingControl 
 							= new BmMenuControl( "Tracking mails:", 
@@ -100,7 +100,7 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 			),
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Logfile Sizes",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Logfile sizes",
 					new VGroup(
 						mMaxLogfileSizeControl 
 							= new BmTextControl( "Maximum size of logfile (KB):", 
@@ -181,7 +181,7 @@ void BmPrefsLoggingView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mLogSmtpControl, 
 		"Here you can select how much shall be logged when sending mails.\n"
-		"If you encounter problems with one of your SMTP-accounts,\n"
+		"If you encounter problems with one of your SMTP accounts,\n"
 		"you can increase this setting in order to get more info.\n"
 		"Please note that logging everything here means that complete\n"
 		"e-mails will be logged, so this can produce a lot of data."

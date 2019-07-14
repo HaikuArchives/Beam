@@ -121,7 +121,7 @@ BmSendAccView::BmSendAccView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "Account", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "Server", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Encryption", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "Auth-Method", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Auth method", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Domain", 80.0, flags, 40.0));
@@ -187,7 +187,7 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSendMailView::BmPrefsSendMailView() 
-	:	inherited( "Sending Mail-Accounts (SMTP)")
+	:	inherited( "Sending mail accounts (SMTP)")
 	,	mClientCertPanel( NULL)
 {
 	MView* view = 
@@ -200,10 +200,10 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 				"99 accounts"
 			),
 			new HGroup(
-				mAddButton = new BetterButton( "Add Account", 
+				mAddButton = new BetterButton( "Add account", 
 												  new BMessage(BM_ADD_ACCOUNT), 
 												  this),
-				mRemoveButton = new BetterButton( "Remove Account", 
+				mRemoveButton = new BetterButton( "Remove account", 
 													  new BMessage( BM_REMOVE_ACCOUNT), 
 													  this),
 				0
@@ -211,34 +211,34 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new VGroup(
-					new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Account info",
 						new VGroup(
 							mAccountControl = new BmTextControl( 
 								"Account name:", false, 0, 25
 							),
 							new Space( minimax(0,5,0,5)),
 							new HGroup( 
-								mServerControl = new BmTextControl( "SMTP-Server / Port:"),
+								mServerControl = new BmTextControl( "SMTP Server / Port:"),
 								mPortControl = new BmTextControl( "", false, 0, 8),
 								0
 							),
 							new Space( minimax(0,5,0,5)),
 							new HGroup(
 								mAuthControl = new BmMenuControl( 
-									"Auth-method:", 
+									"Auth method:", 
 									new BPopUpMenu("")
 								),
 								mCheckAndSuggestButton = new BetterButton(
-									"Check and Suggest", 
+									"Check and suggest", 
 									new BMessage(BM_CHECK_AND_SUGGEST), 
 									this, minimax(-1,-1,-1,-1)
 								),
 								0
 							),
 							mPopControl = new BmMenuControl( 
-								"POP3-Account:", 
+								"POP3 account:", 
 								new BmMenuController( 
-									"POP3-Account:", 
+									"POP3 account:", 
 									this, 
 									new BMessage( BM_POP_SELECTED),
 									&BmGuiRosterBase::RebuildRecvAccountMenu, 
@@ -255,7 +255,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							0
 						)
 					),
-					new MBorder( M_LABELED_BORDER, 10, (char*)"Encryption & Security",
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Encryption & security",
 						new VGroup(
 							mEncryptionControl = new BmMenuControl( 
 								"Encryption:", 
@@ -263,7 +263,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							),
 							new HGroup( 
 								mAcceptedCertControl 
-									= new BmTextControl("Server Certificate:"),
+									= new BmTextControl("Server certificate:"),
 								mClearAcceptedCertButton 
 									= new BetterButton( 
 										"Clear", 
@@ -274,7 +274,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							),
 							new HGroup( 
 								mClientCertControl 
-									= new BmTextControl("Client Certificate:"),
+									= new BmTextControl("Client certificate:"),
 								mSelectClientCertButton 
 									= new BetterButton( 
 										"Select" B_UTF8_ELLIPSIS,
@@ -364,20 +364,20 @@ void BmPrefsSendMailView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mAccListView, 
-		"This listview shows every SMTP-account you have defined."
+		"This listview shows every SMTP account you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAccountControl, 
-		"Here you can enter a name for this SMTP-account.\n"
+		"Here you can enter a name for this SMTP account.\n"
 		"This name is used to identify this account in Beam."
 	);
 	TheBubbleHelper->SetHelp( 
 		mDomainControl, 
-		"Some SMTP-Servers check the domain announced by the client\n"
-		"at session-start. This check will fail if the domain of the client-pc\n"
+		"Some SMTP servers check the domain announced by the client\n"
+		"at session start. This check will fail if the domain of the client-pc\n"
 		"differs from the real internet-domain (usually the case if\n"
 		"the client-pc has no permanent connection to the internet).\n\n"
-		"If the SMTP-server rejects connections, you should try to enter\n"
+		"If the SMTP server rejects connections, you should try to enter\n"
 		"your dial-in-provider's domain into this field, otherwise leave\n"
 		"the field empty."
 	);
@@ -391,7 +391,7 @@ void BmPrefsSendMailView::Initialize() {
 		"Here you can enter the password which \n"
 		"will be used during authentication.\n"
 		"(You can only edit this field if you \n"
-		"checked 'Store Password on Disk')."
+		"checked 'Store password on disk')."
 	);
 	TheBubbleHelper->SetHelp( 
 		mClientCertControl, 
@@ -425,12 +425,12 @@ void BmPrefsSendMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mServerControl, 
-		"Please enter the full name of the SMTP-server \n"
+		"Please enter the full name of the SMTP server \n"
 		"into this field (e.g. 'mail.xxx.org')."
 	);
 	TheBubbleHelper->SetHelp( 
 		mPortControl, 
-		"Please enter the SMTP-port of the server \n"
+		"Please enter the SMTP port of the server \n"
 		"into this field (usually 25)."
 	);
 	static BmString encrHelp;
@@ -443,14 +443,14 @@ void BmPrefsSendMailView::Initialize() {
 				<< "\n"
 				<<	"<auto>		- means the STARTTLS method will be used if available.\n"
 					"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
-					"		  the standard SMTP-port (usually 25).\n"
+					"		  the standard SMTP port (usually 25).\n"
 					"TLS		- TLS (Transport Layer Security) encryption on\n"
-					"		  a special SMTPS-port (usually 465).";
+					"		  a special SMTPS port (usually 465).";
 		if (TheNetEndpointRoster->SupportsEncryptionType(BmSmtpAccount::ENCR_SSL))
 			encrHelp 
 				<< "\n"
 				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
-					"		  a special SMTPS-port (usually 465).";
+					"		  a special SMTPS port (usually 465).";
 	} else {
 		encrHelp = "Encryption is not available,\n"
 					  "no addon could be loaded";
@@ -471,18 +471,18 @@ void BmPrefsSendMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mPopControl, 
-		"Here you can select the POP3-account that shall be used\n"
+		"Here you can select the POP3 account that shall be used\n"
 		"when authenticating via SMTP-AFTER-POP."
 	);
 	TheBubbleHelper->SetHelp( 
 		mCheckAndSuggestButton, 
-		"When you click here, Beam will connect to the SMTP-server,\n"
+		"When you click here, Beam will connect to the SMTP server,\n"
 		"check which authentication types it supports and select\n"
 		"the most secure."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAcceptedCertControl, 
-		"This shows the MD5-fingerprint of the server certificate\n"
+		"This shows the MD5 fingerprint of the server certificate\n"
 		"which has been permanently accepted in one of the preceeding\n"
 		"sessions."
 	);
@@ -762,7 +762,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Remove Mail-Account", 
+						"Remove mail account", 
 					 	(BmString("Are you sure about removing the account <") 
 					 		<< mCurrAcc->Name() << ">?").String(),
 						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
@@ -787,7 +787,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					BmString complaint;
 					complaint = msg->FindString( MSG_COMPLAINT);
 					// first step, tell user about complaint:
-					BAlert* alert = new BAlert( "Sanity Check Failed", 
+					BAlert* alert = new BAlert( "Sanity check failed", 
 														 complaint.String(),
 													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);

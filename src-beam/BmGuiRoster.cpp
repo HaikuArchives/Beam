@@ -86,7 +86,7 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 {
 	// ask user about password:
    BmString text = BmString( "Please select the POP3-account\nto be used "
-   									  "in authentication\nfor SMTP-account <" )
+   									  "in authentication\nfor SMTP account <" )
 	   				   << accName << ">:";
 	BList list;
 	BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
@@ -101,7 +101,7 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 		list.AddItem( (void*)acc->Name().String());
 	}
 	ListSelectionAlert* alert = new ListSelectionAlert(
-		"Recv-Account", text.String(), list, "", "Cancel", "OK"
+		"Receive account", text.String(), list, "", "Cancel", "OK"
 	);
 	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
 	alert->SetLook( B_FLOATING_WINDOW_LOOK);
@@ -476,7 +476,7 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	}
 	// POP
 	{
-		BMenu* recvMenu = new BMenu( "Receiving Accounts");
+		BMenu* recvMenu = new BMenu( "Receiving accounts");
 		BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME(
@@ -500,7 +500,7 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	}
 	// SMTP
 	{
-		BMenu* smtpMenu = new BMenu( "Sending Accounts");
+		BMenu* smtpMenu = new BMenu( "Sending accounts");
 		BmAutolockCheckGlobal lock( TheSmtpAccountList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME(
@@ -532,7 +532,7 @@ void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
 	for (uint32 i = 0; i < choices.size(); ++i) {
 		BmString label = choices[i];
 		if (i > 0)
-			label << " Days";
+			label << " days";
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
 		msg->AddString(BmMailRefFilterControl::MSG_TIME_SPAN_LABEL,
 			label.String());

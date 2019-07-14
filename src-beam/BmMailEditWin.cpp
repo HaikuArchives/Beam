@@ -251,7 +251,7 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
-	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", 
+	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit mail", 
 					  ThePrefs->GetBool( "UseDocumentResizer", true)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
@@ -460,7 +460,7 @@ void BmMailEditWin::CreateGUI() {
 													 new BMessage( BM_CC_ADDED), 
 													 &BmGuiRosterBase::RebuildPeopleMenu)
 					),
-					mReplyToControl = new BmTextControl( "Reply-To:", false),
+					mReplyToControl = new BmTextControl( "Reply to:", false),
 					0
 				),
 				mDetails2Group = new HGroup(
@@ -522,7 +522,7 @@ void BmMailEditWin::CreateGUI() {
 						2.0
 					),
 					new Space(minimax(20,-1,20,-1)),
-					mEditHeaderControl = new BmCheckControl( "Edit Headers", 1, false),
+					mEditHeaderControl = new BmCheckControl( "Edit headers", 1, false),
 					0
 				),
 				0
@@ -535,8 +535,8 @@ void BmMailEditWin::CreateGUI() {
 			0
 		);
 
-	mSendButton->AddActionVariation( "Send Now", new BMessage(BMM_SEND_NOW));
-	mSendButton->AddActionVariation( "Send Later", new BMessage(BMM_SEND_LATER));
+	mSendButton->AddActionVariation( "Send now", new BMessage(BMM_SEND_NOW));
+	mSendButton->AddActionVariation( "Send later", new BMessage(BMM_SEND_LATER));
 
 	BmDividable::DivideSame(
 		mToControl,
@@ -755,7 +755,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BControl* source;
 				if (msg->FindPointer( "source", (void**)&source)==B_OK
 				&& source==dynamic_cast<BControl*>(mSubjectControl)) {
-					SetTitle( (BmString("Edit Mail: ") 
+					SetTitle( (BmString("Edit mail: ") 
 								 + mSubjectControl->Text()).String());
 				}
 				mModified = true;
@@ -955,7 +955,7 @@ void BmMailEditWin::RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
 		clearMsg = new BMessage( BM_CC_CLEAR);
 	else
 		clearMsg = new BMessage( BM_BCC_CLEAR);
-	peopleMenu->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
+	peopleMenu->AddItem( new BMenuItem( "<Clear field>", clearMsg));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -982,8 +982,8 @@ bool BmMailEditWin::EditHeaders( )
 	);
 	TextEntryAlert* alert = 
 		new TextEntryAlert( 
-			"Edit Headers", 
-			"Please edit the mail-headers below:",
+			"Edit headers", 
+			"Please edit the mail headers below:",
 			headerStr.String(),
 			"Cancel",
 			"OK, Send Message",
@@ -1050,7 +1050,7 @@ void BmMailEditWin::SendMail( bool sendNow)
 	if (!smtpAcc) {
 		ShowAlertWithType( 
 			"Before you can send this mail, "
-			"you have to select the SMTP-Account "
+			"you have to select the SMTP account "
 			"to use for sending it.",
 			B_INFO_ALERT
 		);
@@ -1128,7 +1128,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail, BmIdentity* identity)
 			mSubjectControl->SetTextSilently( 
 				mail->GetFieldVal( BM_FIELD_SUBJECT).String()
 			);
-			SetTitle((BmString("Edit Mail: ")+mSubjectControl->Text()).String());
+			SetTitle((BmString("Edit mail: ")+mSubjectControl->Text()).String());
 			// mark corresponding charset:
 			BmString charset = mail->DefaultCharset();
 			charset.ToLower();
@@ -1304,7 +1304,7 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	menu = new BMenu( "File");
 	menu->AddItem( CreateMenuItem( "Save", BMM_SAVE, "SaveMail"));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Preferences...", 
+	AddItemToMenu( menu, CreateMenuItem( "Preferences" B_UTF8_ELLIPSIS, 
 						BMM_PREFERENCES), beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
@@ -1320,22 +1320,22 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
 	menu->AddItem( CreateMenuItem( "Paste", B_PASTE));
-	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
+	menu->AddItem( CreateMenuItem( "Select all", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
-	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
+	menu->AddItem( CreateMenuItem( "Find" B_UTF8_ELLIPSIS, BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find next", BMM_FIND_NEXT));
 	menubar->AddItem( menu);
 
 	// Network
 	menu = new BMenu( "Network");
-	menu->AddItem( CreateMenuItem( "Send Mail Now", BMM_SEND_NOW));
-	menu->AddItem( CreateMenuItem( "Send Mail Later", BMM_SEND_LATER));
+	menu->AddItem( CreateMenuItem( "Send mail now", BMM_SEND_NOW));
+	menu->AddItem( CreateMenuItem( "Send mail later", BMM_SEND_LATER));
 	menu->AddSeparatorItem();
 	menubar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New message", BMM_NEW_MAIL));
 	menubar->AddItem( menu);
 
 	// temporary deactivations:

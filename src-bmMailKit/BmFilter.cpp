@@ -67,7 +67,7 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 		BmString content = archive->FindString("bm:content");
 		if (content.Length())
 			mAddonArchive.AddString( "bm:content", content.String());
-		archive->AddString( MSG_KIND, "Sieve-Script");
+		archive->AddString( MSG_KIND, "Sieve-script");
 	}
 	mKind = archive->FindString( MSG_KIND);
 	SetupAddonPart();

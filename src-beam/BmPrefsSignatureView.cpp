@@ -185,16 +185,16 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 				"99 signatures"
 			),
 			new HGroup(
-				mAddButton = new BetterButton( "Add Signature", 
+				mAddButton = new BetterButton( "Add signature", 
 												  new BMessage(BM_ADD_SIGNATURE), 
 												  this),
-				mRemoveButton = new BetterButton( "Remove Signature", 
+				mRemoveButton = new BetterButton( "Remove signature", 
 													  new BMessage( BM_REMOVE_SIGNATURE), 
 													  this),
 				0
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Info",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature info",
 				new VGroup(
 					mSignatureControl = new BmTextControl( "Signature name:"),
 					new Space( minimax(0,5,0,5)),
@@ -267,7 +267,7 @@ void BmPrefsSignatureView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mSigListView, 
-		"This listview shows every signature you have defined."
+		"This list view shows every signature you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mSignatureControl, 
@@ -287,13 +287,13 @@ void BmPrefsSignatureView::Initialize() {
 		"	signature itself. Exactly this text will be appended to\n"
 		"	a mail that uses this sig.\n"
 		"dynamic:\n"
-		"	The text entered into the content field is a shell-command\n"
+		"	The text entered into the content field is a shell command\n"
 		"	whose output (STDOUT) represents the signature.\n"
 		"	You can use this mode to implement things like random signature\n"
 		"	selection from an external database, for instance.");
 	TheBubbleHelper->SetHelp( 
 		mCharsetControl, 
-		"Here you can define the charset of the signature-text.\n"
+		"Here you can define the charset of the signature text.\n"
 		"If in doubt, just leave the default."
 	);
 	TheBubbleHelper->SetHelp( 
@@ -431,7 +431,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					BmString sigString = mCurrSig->GetSignatureString();
 					if (sigString.Length()) {
 						BAlert* alert = new BAlert( 
-							"Signature-Test", 
+							"Signature test", 
 							(BmString("Please check the results below.\n-- \n")
 								<< sigString).String(),
 							"OK", NULL, NULL, B_WIDTH_AS_USUAL,
@@ -462,7 +462,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Remove Signature", 
+						"Remove signature", 
 						(BmString("Are you sure about removing the signature <") 
 							<< mCurrSig->Name() << ">?").String(),
 						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,

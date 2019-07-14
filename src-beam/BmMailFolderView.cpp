@@ -623,24 +623,24 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 
 	BMenuItem* item;
 	if (folder) {
-		item = new BMenuItem( "New Folder...", 
+		item = new BMenuItem( "New folder" B_UTF8_ELLIPSIS, 
 									 new BMessage( BMM_NEW_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
-		item = new BMenuItem( "Rename Folder...", 
+		item = new BMenuItem( "Rename folder" B_UTF8_ELLIPSIS, 
 									 new BMessage( BMM_RENAME_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
-		item = new BMenuItem( "Delete Folder...", 
+		item = new BMenuItem( "Delete folder" B_UTF8_ELLIPSIS, 
 									 new BMessage( BMM_DELETE_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
 		theMenu->AddSeparatorItem();
 	
-		item = new BMenuItem( "Connect Listview-Layout to Parent", 
+		item = new BMenuItem( "Connect listview-layout to parent", 
 									 new BMessage( BMM_CONNECT_LAYOUT));
 		folder = CurrentFolder();
 		if (folder && folder->RefListStateInfoConnectedToParent())
@@ -650,7 +650,7 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 
 		theMenu->AddSeparatorItem();
 	
-		item = new BMenuItem( "Recreate Cache", 
+		item = new BMenuItem( "Recreate cache", 
 									 new BMessage( BMM_RECACHE_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);

@@ -25,7 +25,7 @@
 BmMailRefViewFilterControl::BmMailRefViewFilterControl()
 	:	inheritedView(
 			mMenuControl = new BmMenuControl(
-				"Narrow Down:",
+				"Narrow down:",
 				new BmMenuController(
 					BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS, this,
 					new BMessage(BM_MAILREF_VIEW_FILTER_CHANGED), 

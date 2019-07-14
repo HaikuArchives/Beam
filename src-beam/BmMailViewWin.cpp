@@ -60,7 +60,7 @@ BmMailViewWin* BmMailViewWin::CreateInstance( BmMailRef* mailRef) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
-	:	inherited( "MailViewWin", BRect(50,50,800,600), "View Mail", 
+	:	inherited( "MailViewWin", BRect(50,50,800,600), "View mail", 
 					  ThePrefs->GetBool( "UseDocumentResizer", true) 
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
@@ -210,12 +210,12 @@ void BmMailViewWin::CreateGUI() {
 	mMailRefView->TeamUpWith(mMailRefViewFilterControl);
 
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
-	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
-	mReplyButton->AddActionVariation( "Reply To Person", new BMessage(BMM_REPLY_ORIGINATOR));
-	mReplyButton->AddActionVariation( "Reply To All", new BMessage(BMM_REPLY_ALL));
-	mForwardButton->AddActionVariation( "Forward As Attachment", new BMessage(BMM_FORWARD_ATTACHED));
-	mForwardButton->AddActionVariation( "Forward Inline", new BMessage(BMM_FORWARD_INLINE));
-	mForwardButton->AddActionVariation( "Forward Inline (With Attachments)", new BMessage(BMM_FORWARD_INLINE_ATTACH));
+	mReplyButton->AddActionVariation( "Reply to list", new BMessage(BMM_REPLY_LIST));
+	mReplyButton->AddActionVariation( "Reply to person", new BMessage(BMM_REPLY_ORIGINATOR));
+	mReplyButton->AddActionVariation( "Reply to all", new BMessage(BMM_REPLY_ALL));
+	mForwardButton->AddActionVariation( "Forward as attachment", new BMessage(BMM_FORWARD_ATTACHED));
+	mForwardButton->AddActionVariation( "Forward inline", new BMessage(BMM_FORWARD_INLINE));
+	mForwardButton->AddActionVariation( "Forward inline (with attachments)", new BMessage(BMM_FORWARD_INLINE_ATTACH));
 
 	mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 
@@ -238,10 +238,10 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
-	menu->AddItem( CreateMenuItem( "Print Message...", BMM_PRINT));
+	menu->AddItem( CreateMenuItem( "Page setup" B_UTF8_ELLIPSIS, BMM_PAGE_SETUP));
+	menu->AddItem( CreateMenuItem( "Print message" B_UTF8_ELLIPSIS, BMM_PRINT));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), beamApp);
+	AddItemToMenu( menu, CreateMenuItem( "Preferences" B_UTF8_ELLIPSIS, BMM_PREFERENCES), beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
@@ -252,20 +252,20 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu = new BMenu( "Edit");
 	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
-	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
+	menu->AddItem( CreateMenuItem( "Select all", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
-	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
+	menu->AddItem( CreateMenuItem( "Find" B_UTF8_ELLIPSIS, BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find next", BMM_FIND_NEXT));
 	menubar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
 	mMailRefView->AddMailRefMenu( menu, this, false);
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
-	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
+	menu->AddItem( CreateMenuItem( "Toggle header mode", BMM_SWITCH_HEADER));
+	menu->AddItem( CreateMenuItem( "Show raw message", BMM_SWITCH_RAW));
 	menubar->AddItem( menu);
 
 	return menubar;

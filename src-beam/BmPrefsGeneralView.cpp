@@ -58,7 +58,7 @@ const char* const BmPrefsGeneralView::MSG_WORKSPACE = "wspace";
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsGeneralView::BmPrefsGeneralView() 
-	:	inherited( "General Options")
+	:	inherited( "General options")
 	,	mMailboxPanel( NULL)
 	,	mIconboxPanel( NULL)
 {
@@ -66,7 +66,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI Options",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI options",
 					new VGroup(
 						mWorkspaceControl = new BmMenuControl( 
 							"Workspace to start in:", 
@@ -74,23 +74,23 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						),
 						new Space( minimax(0,10,0,10)),
 						mListviewLikeTrackerControl = new BmCheckControl( 
-							"Simulate Tracker's listview", 
+							"Simulate Tracker's list view", 
 					 		new BMessage(BM_LISTVIEW_LIKE_TRACKER_CHANGED), 
 					 		this, ThePrefs->GetBool("ListviewLikeTracker", false)
 					 	),
 						new Space( minimax(0,10,0,10)),
 						mShowTooltipsControl = new BmCheckControl( 
-							"Show Tooltips for Toolbar-Buttons and Prefs", 
+							"Show tooltips for toolbar buttons and prefs", 
 							new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
 							this, ThePrefs->GetBool("ShowTooltips", true)
 						),
 						0
 					)
 				),
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Toolbar Options",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Toolbar options",
 					new VGroup(
 						mToolbarLabelControl = new BmMenuControl( 
-							"Layout of Labels in Toolbar:", 
+							"Layout of labels in toolbar:", 
 							new BPopUpMenu("")
 						),
 						new Space( minimax(0,10,0,10)),
@@ -120,7 +120,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 			new Space( minimax(10,0,10,0)),
 			new HGroup( 
 				new BetterButton( 
-					"Make Beam preferred-app for email...", 
+					"Make Beam preferred app for email" B_UTF8_ELLIPSIS, 
 					new BMessage( BM_MAKE_BEAM_STD_APP), 
 					this, minimax(-1,-1,-1,-1)
 				),
@@ -151,8 +151,8 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmPrefsGeneralView::MailboxButtonLabel() {
-	BmString label( "Set Mailbox Folder (currently '");
-	label << ThePrefs->GetString( "MailboxPath") << "')...";
+	BmString label( "Set mailbox folder (currently '");
+	label << ThePrefs->GetString( "MailboxPath") << "')" B_UTF8_ELLIPSIS;
 	return label;
 }
 
@@ -161,12 +161,12 @@ BmString BmPrefsGeneralView::MailboxButtonLabel() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmPrefsGeneralView::IconboxButtonLabel() {
-	BmString label( "Select Icon Folder (currently '");
+	BmString label( "Select icon folder (currently '");
 	BmString iconPath = ThePrefs->GetString("IconPath");
 	int32 pos = iconPath.FindLast("/");
 	if (pos >= B_OK)
 		iconPath.Remove(0,pos+1);
-	label << iconPath << "')...";
+	label << iconPath << "')" B_UTF8_ELLIPSIS;
 	return label;
 }
 
@@ -183,19 +183,19 @@ void BmPrefsGeneralView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mListviewLikeTrackerControl, 
-		"If checked, Beam's listviews will behave like the one's in Tracker:\n"
-		"Shift-Click toggles selection, Option-Click expands selection."
+		"If checked, Beam's list views will behave like the one's in Tracker:\n"
+		"Shift-click toggles selection, Option-click expands selection."
 	);
 	TheBubbleHelper->SetHelp( 
 		mShowTooltipsControl, 
 		"Checking this makes Beam show a small \n"
-		"info-window (just like this one) when the \n"
-		"mouse-pointer lingers over a GUI-item."
+		"info window (just like this one) when the \n"
+		"mouse pointer hovers over a GUI item."
 	);
 	TheBubbleHelper->SetHelp( 
 		mToolbarLabelControl, 
 		"Here you can select if and where the label\n"
-		"shall be shown inside a toolbar-button"
+		"shall be shown inside a toolbar button"
 	);
 	
 	// add workspaces:
@@ -331,12 +331,12 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Set Beam As Preferred App", 
-						"This will make Beam the preferred Application for "
+						"Set Beam as preferred app", 
+						"This will make Beam the preferred application for "
 							"the following mimetypes:\n\n"
 							"\tEmail (text/x-email)\n"
 							"\tInternet-messages (message/rfc822).",
-						"Ok, do it", "Cancel", NULL, B_WIDTH_AS_USUAL,
+						"OK, do it", "Cancel", NULL, B_WIDTH_AS_USUAL,
 						B_WARNING_ALERT
 					);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -360,8 +360,8 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 							mt.SetPreferredApp( appInfo.signature);
 						NoticeChange();
 						BAlert* alert = new BAlert( 
-							"Set Beam As Preferred App", 
-							"Done, Beam is now the preferred Application for email.",
+							"Set Beam as preferred app", 
+							"Done, Beam is now the preferred application for email.",
 							"Good", NULL, NULL, B_WIDTH_AS_USUAL,
 							B_INFO_ALERT
 						);
@@ -395,9 +395,9 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						TheMailFolderList->MailboxPathHasChanged( true);
 						NoticeChange();
 						BAlert* alert = new BAlert( 
-							"Mailbox Path", 
+							"Mailbox path", 
 							"Done, Beam will use the new mailbox after a restart",
-							"Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+							"OK", NULL, NULL, B_WIDTH_AS_USUAL,
 							B_INFO_ALERT
 						);
 						alert->Go();

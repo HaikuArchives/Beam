@@ -20,7 +20,7 @@
 
 const char* const BmMailRefFilterControl::MSG_TIME_SPAN_LABEL = "bm:timsp";
 
-const char* const BmMailRefFilterControl::TIME_SPAN_NONE  = "<No Limit>";
+const char* const BmMailRefFilterControl::TIME_SPAN_NONE  = "<No limit>";
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -28,7 +28,7 @@ const char* const BmMailRefFilterControl::TIME_SPAN_NONE  = "<No Limit>";
 \*------------------------------------------------------------------------------*/
 BmMailRefFilterControl::BmMailRefFilterControl()
 	:	inherited(
-			"Active Time Span:",
+			"Active time span:",
 			new BmMenuController(
 				TIME_SPAN_NONE, this, 
 				new BMessage(BM_MAILREF_FILTER_CHANGED), 
