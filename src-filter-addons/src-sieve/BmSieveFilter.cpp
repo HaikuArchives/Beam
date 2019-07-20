@@ -414,10 +414,10 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 		SetMailFlags( fileintoContext->imapflags, msgContext);
 		if (msgContext->mail->Outbound() && filter->AskBeforeFileInto()) {
 			BmMenuAlert* alert = new BmMenuAlert( 
-				300, 100, "File Into Folder", 
+				300, 100, "File into folder", 
 				"Please select the folder this mail\n should be filed into:",
 				new BmMenuControl(
-					"Target Folder:",
+					"Target folder:",
 					new BmMenuControllerBase( 
 						fileintoContext->mailbox, NULL,
 						new BMessage( BM_MENUITEM_SELECTED), 
@@ -1167,7 +1167,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 
 	VGroup* vgroup = 
 		new VGroup( 
-			new MBorder( M_LABELED_BORDER, 5, (char*)"Selection Criteria",
+			new MBorder( M_LABELED_BORDER, 5, (char*)"Selection criteria",
 				new VGroup(
 					new HGroup(
 						mAnyAllControl = new BmMenuControl( "Match if ", 
@@ -1175,12 +1175,12 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						new MStringView( (char*)" the following is true"),
 						new Space( minimax(1,1,1e5,1)),
 						mAddButton = new MButton( 
-							"Add Line", 
+							"Add line", 
 							new BMessage( BM_ADD_FILTER_LINE), 
 							this, minimax(-1,-1,-1,-1)
 						),
 						mRemoveButton = new MButton( 
-							"Remove Marked Lines", 
+							"Remove marked lines", 
 							new BMessage( BM_REMOVE_FILTER_LINE), 
 							this, minimax(-1,-1,-1,-1)
 						),
@@ -1193,7 +1193,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					0
 				)
 			),
-			new MBorder( M_LABELED_BORDER, 5, (char*)"Filter Actions",
+			new MBorder( M_LABELED_BORDER, 5, (char*)"Filter actions",
 				mActionGroup = new VGroup(
 					new HGroup(
 						new VGroup(
@@ -1220,7 +1220,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 							),
 							new HGroup(
 								mSetStatusControl = new BmCheckControl( 
-									"Set Status", 
+									"Set status", 
 									new BMessage(BM_SET_STATUS_CHANGED), 
 									this
 								),
@@ -1237,7 +1237,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 							),
 							new HGroup(
 								mSetIdentityControl = new BmCheckControl( 
-									"Set Identity", 
+									"Set identity", 
 									new BMessage(BM_SET_IDENTITY_CHANGED), 
 									this
 								),
@@ -1286,7 +1286,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 							),
 							new HGroup(
 								mDiscardControl = new BmCheckControl( 
-									"Move to trash", 
+									"Move to Trash", 
 									new BMessage(BM_DISCARD_CHANGED), 
 									this
 								),
@@ -1438,7 +1438,7 @@ void BmSieveFilterPrefs::Initialize() {
 		);
 		TheBubbleHelper->SetHelp( 
 			mAddrPartControl[i], 
-			"This field is only shown if the selected header is an addres-field.\n"
+			"This field is only shown if the selected header is an address-field.\n"
 			"Here you can choose, which part of the address-field\n"
 			"the filter should look at.\n"
 			"Assuming a FROM header of 'Elliot Smith <esmith@test.org>',\n"
@@ -2181,7 +2181,7 @@ void BmSieveScriptFilterPrefs::MessageReceived( BMessage* msg) {
 			if (mCurrFilterAddon) {
 				if (!mCurrFilterAddon->CompileScript()) {
 					BAlert* alert = new BAlert( 
-						"Filter-Test", 
+						"Filter test", 
 						mCurrFilterAddon->ErrorString().String(),
 						"OK", NULL, NULL, B_WIDTH_AS_USUAL,
 						B_INFO_ALERT
