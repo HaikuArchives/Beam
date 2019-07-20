@@ -1259,7 +1259,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 							target);
 		menu->AddSeparatorItem();
 	}
-	AddItemToMenu( menu, CreateMenuItem( "Move to trash", BMM_TRASH), target);
+	AddItemToMenu( menu, CreateMenuItem( "Move to Trash", BMM_TRASH), target);
 }
 
 /*------------------------------------------------------------------------------*\
