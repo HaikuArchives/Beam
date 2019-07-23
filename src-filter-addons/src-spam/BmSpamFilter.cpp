@@ -2102,19 +2102,19 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				new MBorder( M_LABELED_BORDER, 5, (char*)"Settings",
 					new VGroup( 
 						mThresholdControl = new MSlider( 
-							"Auto-Learning Threshold:", 0, 40, 1,
+							"Auto-learning threshold:", 0, 40, 1,
 							new BMessage(BM_THRESHOLD_CHANGED),
 							this
 						),
 						new Space(minimax(0, 5, 1e5, 5)),
 						mProtectMyTofuControl = new MSlider( 
-							"Tofu (Genuine Mail) Protection:", 0, 25, 1,
+							"Tofu (genuine mail) protection:", 0, 25, 1,
 							new BMessage(BM_PROTECTMYTOFU_CHANGED),
 							this
 						),
 						new Space(minimax(0, 10, 1e5, 10)),
 						mUnsureThresholdControl = new MSlider( 
-							"Quarantine Threshold:", 50, 90, 1,
+							"Quarantine threshold:", 50, 90, 1,
 							new BMessage(BM_UNSURE_THRESHOLD_CHANGED),
 							this
 						),
@@ -2123,19 +2123,19 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				),
 				new HGroup(
 					mShowStatisticsButton = new MButton(
-						"Show Statistics" B_UTF8_ELLIPSIS,
+						"Show statistics" B_UTF8_ELLIPSIS,
 						new BMessage( BM_SHOW_STATISTICS), 
 						this, minimax(-1,-1,-1,-1)
 					),
 					new Space(minimax(5, 0, 5, 1e5)),
 					mResetStatisticsButton = new MButton(
-						"Reset Statistics" B_UTF8_ELLIPSIS,
+						"Reset statistics" B_UTF8_ELLIPSIS,
 						new BMessage( BM_RESET_STATISTICS),
 						this, minimax(-1,-1,-1,-1)
 					),
 					new Space(minimax(0, 0, 1e5, 1e5)),
 					mTrainButton = new MButton(
-						"Train Filter" B_UTF8_ELLIPSIS,
+						"Train filter" B_UTF8_ELLIPSIS,
 						new BMessage( BM_TRAIN_FILTER),
 						this, minimax(-1,-1,-1,-1)
 					),
@@ -2145,24 +2145,24 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				0
 			),
 			new VGroup(
-				new MBorder( M_LABELED_BORDER, 5, (char*)"Effective Values",
+				new MBorder( M_LABELED_BORDER, 5, (char*)"Effective Vvlues",
 					new VGroup( 
 						new MBViewWrapper(
 							mSpamThresholdBar = new BStatusBar( 
-								BRect(), "SpamBar", "Resulting Spam Threshold: ", ""
+								BRect(), "SpamBar", "Resulting Spam threshold: ", ""
 							), 
 							true, false, false
 						),
 						new MBViewWrapper(
 							mTofuThresholdBar = new BStatusBar( 
-								BRect(), "TofuBar", "Resulting Tofu Threshold: ", ""
+								BRect(), "TofuBar", "Resulting Tofu threshold: ", ""
 							), 
 							true, false, false
 						),
 						0
 					)
 				),
-				new MBorder( M_LABELED_BORDER, 5, (char*)"Filter Actions",
+				new MBorder( M_LABELED_BORDER, 5, (char*)"Filter actions",
 					new VGroup( 
 						mProtectKnownAddrsControl = new BmCheckControl( 
 							"Accept all mails from known addresses as Tofu", 
@@ -2380,8 +2380,8 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 				stats << buf;
 			}
 			TextEntryAlert* alert = new TextEntryAlert( 
-				"", "SPAM-Filter Statistics:", "", 
-				"I See", NULL, false, 500.0, 12, B_WIDTH_AS_USUAL, true
+				"", "SPAM-filter statistics:", "", 
+				"OK", NULL, false, 500.0, 12, B_WIDTH_AS_USUAL, true
 			);
 			alert->SetShortcut( 0, B_ESCAPE);
 			alert->TextEntryView()->MakeEditable(false);
@@ -2399,10 +2399,9 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 				// first step, ask user about it:
 				BmString s("This will reset all statistical information (how many\n"
 							  "mails have been learned/classified) from the datafiles\n"
-							  "(the SPAM-/TOFU-data itself is not changed at all).\n\n"
-							  "Would you like to proceed?");
+							  "(the SPAM-/TOFU-data itself is not changed at all).\n\n");
 				BAlert* alert = new BAlert( 
-					"Reset Statistics", s.String(), "Yes, Proceed", "No, Cancel", NULL, 
+					"Reset statistics", s.String(), "Reset", "Cancel", NULL, 
 					B_WIDTH_AS_USUAL, B_WARNING_ALERT
 				);
 				alert->SetShortcut( 1, B_ESCAPE);
@@ -2453,7 +2452,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_TRAIN_FILTER: {
 			if (nSpamometerRunning) {
 				BAlert* alert = new BAlert( 
-					"Train SPAM-Filter", 
+					"Train SPAM-filter", 
 					"A training session is already running!", "I See", NULL, NULL, 
 					B_WIDTH_AS_USUAL, B_STOP_ALERT
 				);
@@ -2472,7 +2471,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 							  "or should live below a folder named 'spam'.\n\n"
 							  "Would you like to proceed?");
 				BAlert* alert = new BAlert( 
-					"Train SPAM-Filter", s.String(), "Yes, Proceed", "No, Cancel", NULL, 
+					"Train SPAM-Filter", s.String(), "Train filter", "Cancel", NULL, 
 					B_WIDTH_AS_USUAL, B_WARNING_ALERT
 				);
 				alert->SetShortcut( 1, B_ESCAPE);
@@ -2600,11 +2599,11 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 			mCurrFilterAddon->D.mSpamThreshold = int8(spamThr);
 			mCurrFilterAddon->D.mTofuThreshold = int8(tofuThr);
 			char buf[10];
-			mSpamThresholdBar->Reset("Resulting spam threshold: ");
+			mSpamThresholdBar->Reset("Resulting Spam threshold: ");
 			mSpamThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", spamThr);
 			mSpamThresholdBar->Update(float(spamThr), buf);
-			mTofuThresholdBar->Reset("Resulting tofu threshold: ");
+			mTofuThresholdBar->Reset("Resulting Tofu threshold: ");
 			mTofuThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", tofuThr);
 			mTofuThresholdBar->Update(float(tofuThr), buf);
