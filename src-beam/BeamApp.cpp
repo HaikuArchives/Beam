@@ -146,8 +146,8 @@ static int32 MarkMailsAs( void* data)
 							  "\n\nShould Beam mark only the new messages "
 							  "as being read?");
 				BAlert* alert = new BAlert( 
-					"Set Mail Status", s.String(), "Cancel", 
-					"Set Status of All Messages", "Set Status of New Messages Only", 
+					"Set mail status", s.String(), "Cancel", 
+					"Set status of all messages", "Set status of new messages only", 
 					B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_IDEA_ALERT
 				);
 				alert->SetShortcut( 0, B_ESCAPE);
@@ -421,8 +421,8 @@ static int32 ForwardMails( void* data) {
 					  "single mail and forward that or would you prefer "
 					  "to keep the messages separate?");
 		BAlert* alert = new BAlert( 
-			"Forwarding Multiple Mails", s.String(),
-		 	"Cancel", "Keep Separate", "Join", 
+			"Forwarding multiple mails", s.String(),
+		 	"Cancel", "Keep separate", "Join", 
 		 	B_WIDTH_AS_USUAL,	B_OFFSET_SPACING, B_IDEA_ALERT
 		);
 		alert->SetShortcut( 0, B_ESCAPE);
@@ -479,8 +479,8 @@ static int32 ReplyToMails( void* data) {
 					  "single mail and reply to that or would you prefer "
 					  "to keep the messages separate?");
 		BAlert* alert = new BAlert( 
-			"Replying to Multiple Mails", s.String(),
-			"Keep Separate", "Join per Recipient", "Join All", 
+			"Replying to multiple mails", s.String(),
+			"Keep separate", "Join per recipient", "Join all", 
 			B_WIDTH_AS_USUAL,	B_EVEN_SPACING, B_IDEA_ALERT
 		);
 		buttonPressed = alert->Go();
@@ -892,7 +892,7 @@ bool BeamApplication::QuitRequested() {
 			BAlert* alert = new BAlert( "Active jobs", 
 				"There are still some jobs/connections active!"
 					"\nDo you really want to quit now?",
-				"Yes, Quit now", "Cancel", NULL, B_WIDTH_AS_USUAL,
+				"Quit", "Cancel", NULL, B_WIDTH_AS_USUAL,
 				B_WARNING_ALERT
 			);
 			alert->SetShortcut( 1, B_ESCAPE);

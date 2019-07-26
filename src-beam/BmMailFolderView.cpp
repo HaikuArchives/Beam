@@ -482,8 +482,8 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( 
-						"Trash Mail-Folder", 
-						(BmString("Are you sure about trashing folder <") 
+						"Trash mail folder", 
+						(BmString("Are you sure about trashing the folder <") 
 							<< folder->Name() << ">?").String(),
 						"Move to Trash", "Cancel", NULL, 
 						B_WIDTH_AS_USUAL,

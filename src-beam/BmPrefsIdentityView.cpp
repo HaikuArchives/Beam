@@ -119,7 +119,7 @@ BmRecvIdentView::BmRecvIdentView( int32 width, int32 height)
 
 	AddColumn( new CLVColumn( "Identity", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "Real name", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "Mailaddress", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Mail address", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Aliases", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Receiving account", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "F", 20.0, flags, 20.0, "(F)allback identity?"));

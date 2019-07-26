@@ -477,7 +477,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				utf8Text.Adopt( destBuf.TheString());
 				if (encoder.HadError() || encoder.HadToDiscardChars()) {
 					BAlert* alert = new BAlert( 
-						"Wrong Source Charset", 
+						"Wrong source charset", 
 						"The selected source charset is probably incorrect, "
 							"as some of the characters couldn't be converted to UTF8.",
 						"OK", NULL, NULL, B_WIDTH_AS_USUAL,
@@ -531,7 +531,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						newMsg->AddInt32( "sel_index", index);
 					}
 					BAlert* alert = new BAlert( 
-						"Remove Mail-Attachment", 
+						"Remove mail attachment", 
 						"Are you sure about removing the selected attachment(s)"
 							" from the mail?",
 						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
@@ -678,11 +678,11 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 					}
 					if (fileExistsCount) {
 						BAlert* alert = new BAlert( 
-							"File Exists",
+							"File exists",
 							"At least one of the files you have dragged already exists"
 							   " in the target directory.\n"
 								"\nWould you like to overwrite any existing files?",
-							"Cancel", "Yes, Overwrite", NULL, B_WIDTH_AS_USUAL,
+							"Cancel", "Overwrite", NULL, B_WIDTH_AS_USUAL,
 							B_WARNING_ALERT
 						);
 						alert->SetShortcut( 0, B_ESCAPE);
@@ -852,7 +852,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 				BmString s("ATTENTION!\n\n");
 				s << "The attachment has been declared to be of type \n\n\t"
 				  << bodyPart->MimeType()
-				  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
+				  << "\n\nbut Haiku thinks it is in fact of type\n\n\t" << realMT
 				  << "\n\nWhat would you like Beam to do?";
 				BmString openReal = BmString("Open as ")<<realMT;
 				BmString openDeclared = BmString("Open as ")<<bodyPart->MimeType();
@@ -883,7 +883,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			if (BmBodyPart::MimeTypeIsPotentiallyHarmful( realMT)) {
 				BmString s("The attachment may contain harmful content, "
 							  "are you sure to open it?");
-				BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
+				BAlert* alert = new BAlert( "", s.String(), "Open", "Don't open");
 				alert->SetShortcut( 1, B_ESCAPE);
 				doIt = (alert->Go() == 0);
 			}

@@ -336,7 +336,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 							"the following mimetypes:\n\n"
 							"\tEmail (text/x-email)\n"
 							"\tInternet-messages (message/rfc822).",
-						"OK, do it", "Cancel", NULL, B_WIDTH_AS_USUAL,
+						"OK", "Cancel", NULL, B_WIDTH_AS_USUAL,
 						B_WARNING_ALERT
 					);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -362,7 +362,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						BAlert* alert = new BAlert( 
 							"Set Beam as preferred app", 
 							"Done, Beam is now the preferred application for email.",
-							"Good", NULL, NULL, B_WIDTH_AS_USUAL,
+							"OK", NULL, NULL, B_WIDTH_AS_USUAL,
 							B_INFO_ALERT
 						);
 						alert->Go();

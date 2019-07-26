@@ -2453,7 +2453,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			if (nSpamometerRunning) {
 				BAlert* alert = new BAlert( 
 					"Train SPAM-filter", 
-					"A training session is already running!", "I See", NULL, NULL, 
+					"A training session is already running!", "OK", NULL, NULL, 
 					B_WIDTH_AS_USUAL, B_STOP_ALERT
 				);
 				alert->SetShortcut( 1, B_ESCAPE);
@@ -2471,7 +2471,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 							  "or should live below a folder named 'spam'.\n\n"
 							  "Would you like to proceed?");
 				BAlert* alert = new BAlert( 
-					"Train SPAM-Filter", s.String(), "Train filter", "Cancel", NULL, 
+					"Train SPAM-filter", s.String(), "Train filter", "Cancel", NULL, 
 					B_WIDTH_AS_USUAL, B_WARNING_ALERT
 				);
 				alert->SetShortcut( 1, B_ESCAPE);

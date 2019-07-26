@@ -623,10 +623,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 						// first step, warn user about empty subject:
 						BAlert* alert = new BAlert( 
-							"Empty Subject", 
+							"Empty subject", 
 							"The mail does not have a subject. Do you want to "
 							"send it anyway?",
-							"Yes, Send", "No, Edit", NULL, B_WIDTH_AS_USUAL,
+							"Send anyway", "Edit subject", NULL, B_WIDTH_AS_USUAL,
 							B_WARNING_ALERT
 						);
 						alert->SetShortcut( 1, B_ESCAPE);
@@ -1437,7 +1437,7 @@ bool BmMailEditWin::QuitRequested() {
 		Activate();
 		BAlert* alert = new BAlert( "title", 
 											 "Save mail as draft before closing?",
-											 "Cancel", "Don't Save", "Save",
+											 "Cancel", "Don't save", "Save",
 											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
 											 B_WARNING_ALERT);
 		alert->SetShortcut( 0, B_ESCAPE);
