@@ -1314,8 +1314,8 @@ void BeamApplication::AboutRequested() {
 		TheResources->IconByName("AboutIcon")->bitmap,
 		15, 
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
-		"mailto:beam@hirschkaefer.de",
-		"http://beam.sourceforge.net",
+		"",
+		"https://github.com/HaikuArchives/Beam",
 		"\n\n\n\n\n\n\nBeam makes use of the following Software:\n\
 \n\
 	Libiconv, by Bruno Haible\n\
