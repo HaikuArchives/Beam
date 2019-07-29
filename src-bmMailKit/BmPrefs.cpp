@@ -594,6 +594,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Edit as new", "");
 	SetShortcutIfNew( shortcutsMsg, "Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Find", "F");
+	SetShortcutIfNew( shortcutsMsg, "Find in message", "F");
 	SetShortcutIfNew( shortcutsMsg, "Find messages", "<SHIFT>F");
 	SetShortcutIfNew( shortcutsMsg, "Find next", "G");
 	SetShortcutIfNew( shortcutsMsg, "Forward as attachment", "<SHIFT>J");
