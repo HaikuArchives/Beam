@@ -134,7 +134,7 @@ BmBitmapHandle* BmResources::IconByName( const BmString name) {
 		BMimeType mt( name.String());
 		BBitmap* bitmap = NULL;
 		if (mt.InitCheck() == B_OK) {
-			bitmap = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
+			bitmap = new BBitmap( BRect( 0, 0, 15, 15), B_RGBA32);
 			if (mt.GetIcon( bitmap, B_MINI_ICON) != B_OK) {
 				// the given mimetype has no icon defined, we check if the 
 				// preferred app of this mimetype has an icon for this type:
