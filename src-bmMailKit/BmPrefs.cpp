@@ -35,7 +35,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 
 const BmString BmPrefs::nListSeparator = ",";
 
-const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 32 stippi";
+const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 32 default";
 const int16 BmPrefs::nPrefsVersion = 17;
 
 /*------------------------------------------------------------------------------*\

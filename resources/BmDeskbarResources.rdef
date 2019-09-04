@@ -6,7 +6,7 @@ resource app_signature "application/x-vnd.zooey-beam_deskbar";
 resource app_version {
 	major  = 1,
 	middle = 2,
-	minor  = 0,
+	minor  = 1,
 
 	variety = B_APPV_FINAL,
 	internal = 0,
