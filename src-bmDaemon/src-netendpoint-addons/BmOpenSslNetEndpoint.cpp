@@ -104,7 +104,6 @@ BmOpenSslNetEndpoint::ContextManager::ContextManager()
 		"DHE-RSA-AES256-SHA:"
 		"AES128-SHA:"
 		"AES256-SHA");
-	SSL_CTX_set_ecdh_auto(mTlsContext, 1);
 	SSL_CTX_set_client_cert_cb(mTlsContext, 
 		BmOpenSslNetEndpoint::ClientCertCallback);
 	SSL_CTX_set_verify(mTlsContext, SSL_VERIFY_PEER,
@@ -201,7 +200,7 @@ void BmOpenSslNetEndpoint::ContextManager::RemoveUserdataForCurrentThread()
 void BmOpenSslNetEndpoint::ContextManager::_SetupSslLocks(void)
 {
 	for (int i=0; i<CRYPTO_num_locks(); i++)
-		mSslLocks.push_back(new BLocker(CRYPTO_get_lock_name(i)));
+		mSslLocks.push_back(new BLocker("crypto lock"));
 	CRYPTO_set_id_callback(thread_id_callback);
 	CRYPTO_set_locking_callback(locking_callback);
 }
@@ -544,7 +543,7 @@ status_t BmOpenSslNetEndpoint
 			uint32 err = ERR_peek_error();
 			errLib = ERR_GET_LIB(err);
 			errReason = ERR_GET_REASON(err);
-			if (errLib == ERR_LIB_PKCS12 && errReason == SSL_R_BAD_MAC_DECODE) {
+			if (errLib == ERR_LIB_PKCS12 && errReason == PKCS12_R_MAC_VERIFY_FAILURE) {
 				// wrong passphrase was given, but before we can try again,
 				// we need to remove that error from the error queue:
 				ERR_get_error();
