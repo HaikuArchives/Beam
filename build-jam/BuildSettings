@@ -98,8 +98,8 @@ rule SetUpSubDirBuildSettings {
 		OPTIMIZE = 0 ;
 		STRIP_APPS = 0 ;
 		DEFINES += DEBUG=$(DEBUG) BM_REF_DEBUGGING ;
-		CCFLAGS += -g ;
-		C++FLAGS += -g -fno-inline ;
+		CCFLAGS += -gdwarf-3 ;
+		C++FLAGS += -gdwarf-3 -fno-inline ;
 		LINKFLAGS += -g ;
 		DISTRO_DIR			= [ FDirName $(TOP) generated distro-debug-$(PLATFORM) ] ;
 		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-debug-$(PLATFORM) ] ;

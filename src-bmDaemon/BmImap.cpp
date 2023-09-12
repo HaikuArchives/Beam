@@ -792,7 +792,9 @@ void BmImap::StateRetrieve()
 		// fetch current mail
 		BmString serverUID = LocalUidToServerUid(mMsgUIDs[i]);
 // TODO: May also add more stuff to FETCH, like "flags"
-		cmd = BmString("UID FETCH ") << serverUID << " rfc822";
+		// cmd = BmString("UID FETCH ") << serverUID << " rfc822";
+		// cmd = BmString("UID FETCH ") << serverUID << " full";
+		cmd = BmString("UID FETCH ") << serverUID << " body[]";
 		SendCommand( cmd);
 		time_t before = time(NULL);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], false, true))
