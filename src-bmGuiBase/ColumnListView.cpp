@@ -40,6 +40,12 @@
 #include "CLVColumn.h"
 #include "CLVListItem.h"
 
+// NOTE: The pragma(s) below do not change any functionality in the code. They only hide those 
+// warnings when building. At some point, the lines that produce the(se) warning(s), should be
+// reviewed to confirm, whether there is something that needs to be "fixed".
+#pragma GCC diagnostic ignored "-Wparentheses"
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+
 const char* const ColumnListView::MSG_DISPLAYORDER = 	"bm:dsplord";
 const char* const ColumnListView::MSG_NUMSORTKEYS = 	"bm:nsort";
 const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";

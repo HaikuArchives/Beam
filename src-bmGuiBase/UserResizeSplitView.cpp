@@ -18,6 +18,11 @@
 #include "Colors.h"
 #include "ColumnListView.h"
 
+// NOTE: The pragma(s) below do not change any functionality in the code. They only hide those 
+// warnings when building. At some point, the lines that produce the(se) warning(s), should be
+// reviewed to confirm, whether there is something that needs to be "fixed".
+#pragma GCC diagnostic ignored "-Wconversion"
+
 static const int32 Thickness = 4;
 
 

@@ -588,7 +588,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 					if (!bodyPartItem)
 						break;
-					BmRef<BmListModelItem> modelItemRef( );
+					BmRef<BmListModelItem> modelItemRef;
 					BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 					if (!bodyPart)
 						break;
