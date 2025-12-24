@@ -36,6 +36,12 @@
 #include "BubbleHelper.h"
 #include "Colors.h"
 
+// NOTE: The pragma(s) below do not change any functionality in the code. They only hide those 
+// warnings when building. At some point, the lines that produce the(se) warning(s), should be
+// reviewed to confirm, whether there is something that needs to be "fixed".
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+
 int32 BubbleHelper::runcount=0;
 BubbleHelper* TheBubbleHelper = NULL;
 

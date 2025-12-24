@@ -1,1 +1,3 @@
 generated
+*.o
+.genio

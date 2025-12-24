@@ -40,6 +40,10 @@
 #include "Colors.h"
 #include "NewStrings.h"
 
+// NOTE: The pragma(s) below do not change any functionality in the code. They only hide those 
+// warnings when building. At some point, the lines that produce the(se) warning(s), should be
+// reviewed to confirm, whether there is something that needs to be "fixed".
+#pragma GCC diagnostic ignored "-Wconversion"
 
 //******************************************************************************************************
 //**** Constants

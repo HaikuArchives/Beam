@@ -17,6 +17,12 @@
 
 #include "NewStrings.h"
 
+// NOTE: The pragma(s) below do not change any functionality in the code. They only hide those 
+// warnings when building. At some point, the lines that produce the(se) warning(s), should be
+// reviewed to confirm, whether there is something that needs to be "fixed".
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* font,
 	float* string_widths)
 //Fills the stringsWidths array with the width of each individual string in the array using 
