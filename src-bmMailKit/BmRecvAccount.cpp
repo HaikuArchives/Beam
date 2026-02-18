@@ -159,7 +159,7 @@ BmRecvAccount::BmRecvAccount( BMessage* archive, BmRecvAccountList* model)
 		for( int32 i=0; archive->FindString( MSG_UID, i, &uidStr) == B_OK; ++i) {
 			pos = strchr( uidStr, ' ');
 			if (pos)
-				uid = BmString( uidStr, pos-uidStr);
+				uid = BmString( uidStr, (int32)(pos - uidStr));
 			else
 				uid = uidStr;
 			mUIDs[uid] = time( NULL);
@@ -241,7 +241,7 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 	BmUidMap::const_iterator iter;
 	for( iter = mUIDs.begin(); ret==B_OK && iter!=mUIDs.end(); ++iter, ++i) {
 		ret = archive->AddString( MSG_UID, iter->first.String())
-				|| archive->AddInt32( MSG_UID_TIME, iter->second);
+				|| archive->AddInt32( MSG_UID_TIME, (int32)iter->second);
 	}
 	return ret;
 }
@@ -310,7 +310,7 @@ void BmRecvAccount::MarkUIDAsDownloaded( const BmString& uid) {
 	BMessage action( BM_APPEND_UID);
 	action.AddString( BmListModel::MSG_ITEMKEY, Key().String());
 	action.AddString( MSG_UID, uid.String());
-	action.AddInt32( MSG_UID_TIME, timeDownloaded);
+	action.AddInt64( MSG_UID_TIME, timeDownloaded);
 	TheRecvAccountList->StoreAction(&action);
 }
 

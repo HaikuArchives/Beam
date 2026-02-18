@@ -79,7 +79,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 	}
 	if (flags & BmMailFolder::UPD_SPECIAL_COUNT) {
 		BmString newCountStr;
-		int32 newCount = folder->SpecialMailCount();
+		size_t newCount = folder->SpecialMailCount();
 		if (newCount == 0)
 			newCountStr = "-";
 		else if (newCount < 0)

@@ -254,7 +254,7 @@ bool BmStoredActionManager::Flush()
 		if (sz < 0)
 			BM_THROW_RUNTIME( BmString("Could not write to settings-file\n\t<")
 									 	<< filename << ">\n\n Result: " 
-									 	<< strerror(sz));
+									 	<< strerror((status_t)sz));
 		return true;
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());

@@ -71,7 +71,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 	} else {
 		while( src<srcEnd && *src!='\n')
 			src++;
-		uint32 statusSize = src-srcBuf;
+		uint32 statusSize = (uint32)(src - srcBuf);
 		mStatusText.Append( srcBuf, statusSize);
 		if (src<srcEnd) {
 			src++;								// skip '\n'
@@ -87,7 +87,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 					mEndReached = true;
 			}
 		}
-		srcLen = src-srcBuf;
+		srcLen = (uint32)(src - srcBuf);
 		destLen = 0;
 	}
 	if (mUpdate && destLen)
@@ -332,7 +332,7 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdateCleanupStatus( const float delta, int32 currMsg) {
 	BmString text;
-	uint32 count = mCleanupMsgs.size();
+	uint32 count = (uint32)mCleanupMsgs.size();
 	if (count > 0) {
 		text = BmString() << currMsg << " of " << count;
 	} else {
@@ -624,7 +624,7 @@ void BmPopper::StateCheck() {
 						<< " mails, but LIST received " << listAnswerVect.size()
 						<< " lines!");
 		if (count > listAnswerVect.size())
-			count = listAnswerVect.size();
+			count = (uint32)listAnswerVect.size();
 	}
 	for( uint32 i=0; i<count; i++) {
 		int32 msgSize;
@@ -671,7 +671,7 @@ void BmPopper::StateCheck() {
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateCleanup() {
 	BmString cmd;
-	uint32 count = mCleanupMsgs.size();
+	uint32 count = (uint32)mCleanupMsgs.size();
 	if (count == 0)
 		return;
 	for(uint32 i = 0; i < count; ++i) {
@@ -712,7 +712,7 @@ void BmPopper::StateRetrieve() {
 			BM_LOG( BM_LogRecv,
 					  BmString("Received mail of size ")<<mAnswerText.Length()
 							<< " bytes in " << duration << " seconds => "
-							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
+							<< mAnswerText.Length()/(int32)duration/1024.0 << "KB/s");
 		}
 		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
 			// as this actually happens (what the heck?) we simply

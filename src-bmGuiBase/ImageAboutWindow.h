@@ -50,9 +50,9 @@ class BStringView;
 //******************************************************************************************************
 //**** Constants
 //******************************************************************************************************
-IMPEXPBMGUIBASE const uint32 c_about_window_to_front = 'AbTF';
-IMPEXPBMGUIBASE const uint32 c_about_window_closed = 'AbCl';
-IMPEXPBMGUIBASE const uint32 c_about_window_url_invoked = 'AbUr';
+const uint32 c_about_window_to_front = 'AbTF';
+const uint32 c_about_window_closed = 'AbCl';
+const uint32 c_about_window_url_invoked = 'AbUr';
 
 
 //******************************************************************************************************

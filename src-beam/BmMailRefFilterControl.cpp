@@ -60,7 +60,7 @@ void BmMailRefFilterControl::MessageReceived(BMessage* msg) {
 			case BM_MAILREF_FILTER_CHANGED: {
 				if (mPartnerMailRefView) {
 					BmString label = msg->FindString(MSG_TIME_SPAN_LABEL);
-					int32 numberOfDays = atol(label.String());
+					int32 numberOfDays = (int32)atol(label.String());
 					BmMailRefFilter* filter 
 						= label != TIME_SPAN_NONE
 							? new BmMailRefFilter(label, numberOfDays)

@@ -153,7 +153,7 @@ BmString BytesToString( int32 bytes, bool mini) {
 	} else if (bytes >= 1024) {
 		sprintf( buf, "%6.2f KB", bytes/1024.0);
 	} else {
-		sprintf( buf, "%ld %s", bytes, mini ? "b" : "bytes");
+		sprintf( buf, "%" B_PRId32 " %s", bytes, mini ? "b" : "bytes");
 	}
 	return BmString(buf);
 }
@@ -165,7 +165,7 @@ BmString BytesToString( int32 bytes, bool mini) {
 \*------------------------------------------------------------------------------*/
 BmString TimeToSwatchString( time_t utc, const char* format) {
 	time_t swatch = utc+3600;	// add one hour
-	int32 beats = ((swatch % 86400) * 1000) / 86400;
+	int64 beats = ((swatch % 86400) * 1000) / 86400;
 	BmString timeStr = TimeToString( utc, format);
 	if (strchr(format, '@'))
 		timeStr << beats;

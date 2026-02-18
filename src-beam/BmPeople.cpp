@@ -112,7 +112,7 @@ bool BmPerson::AddEmail( const BmString& em) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPerson::CreateNewEmail( const BmString& em) {
-	uint32 count = mEmails.size();
+	size_t count = mEmails.size();
 	if (count >= 5)
 		// can only handle up two 5 emails (even MrPeeps doesn't do more)
 		return false;
@@ -616,7 +616,7 @@ status_t BmPeopleList::Archive( BMessage* archive, bool deep) const {
 		);
 	status_t ret = BArchivable::Archive( archive, deep);
 	if (ret == B_OK) {
-		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, mKnownAddrSet.size());
+		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, (int32)mKnownAddrSet.size());
 		ret = archive->AddInt16( BmListModel::MSG_VERSION, ArchiveVersion());
 	}
 	if (deep && ret == B_OK) {
@@ -717,7 +717,7 @@ BMenu* BmPeopleList::_CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 			else
 				allAddrs << ", " << info.emails[0];
 		}
-		uint32 numMails = info.emails.size();
+		size_t numMails = info.emails.size();
 		if (numMails>1) {
 			BMenu* addrMenu = new BMenu( info.name.String());
 			addrMenu->SetFont( font);

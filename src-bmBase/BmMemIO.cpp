@@ -225,7 +225,7 @@ BmStringIBuf::~BmStringIBuf() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmStringIBuf::AddBuffer( const char* str, int32 len) {
-	mBufInfo.AddItem( new BufInfo( str, len<0 ? strlen( str) : len));
+	mBufInfo.AddItem( new BufInfo( str, len<0 ? (int32)strlen( str) : len));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -417,7 +417,7 @@ BmStringOBuf&
 BmStringOBuf::operator<<(const char *str)
 {
 	if (str)
-		Write( str, strlen(str));
+		Write( str, (int32)strlen(str));
 	return *this;	
 }
 
@@ -617,7 +617,7 @@ BmRingBuf&
 BmRingBuf::operator<<(const char *str)
 {
 	if (str)
-		Put( str, strlen(str));
+		Put( str, (int32)strlen(str));
 	return *this;	
 }
 

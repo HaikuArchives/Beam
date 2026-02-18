@@ -108,7 +108,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 						// tagged status (at bottom of answer stream)
 						mBottomStatusText << mLastStatusLine;
 					mHaveStatus = true;
-					srcLen = src-srcBuf;
+					srcLen = (uint32)(src - srcBuf);
 					destLen = 0;
 					// we have reached the end if no tag is expected (the answer
 					// will be one line only) or if this is the tagged line:
@@ -125,7 +125,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 				break;
 			}
 		}
-		srcLen = src-srcBuf;
+		srcLen = (uint32)(src - srcBuf);
 		destLen = 0;
 		return;
 	}
@@ -391,7 +391,7 @@ void BmImap::UpdateMailStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmImap::UpdateCleanupStatus( const float delta, int32 currMsg) {
 	BmString text;
-	uint32 count = mCleanupMsgUIDs.size();
+	uint32 count = (uint32)mCleanupMsgUIDs.size();
 	if (count > 0) {
 		text = BmString() << currMsg << " of " << count;
 	} else {
@@ -677,7 +677,7 @@ void BmImap::StateCheck()
 				throw BM_network_error( BmString("answer to '") << cmd
 													<< "' has unparsable string list in line "
 													<< i+1);
-			uint32 listSize = nestedList.Size();
+			uint32 listSize = (uint32)nestedList.Size();
 			if (listSize % 2 != 0)
 				throw BM_network_error( BmString("answer to '") << cmd
 													<< "' has uneven number of items "
@@ -762,7 +762,7 @@ void BmImap::StateCheck()
 \*------------------------------------------------------------------------------*/
 void BmImap::StateCleanup() {
 	BmString cmd;
-	uint32 count = mCleanupMsgUIDs.size();
+	uint32 count = (uint32)mCleanupMsgUIDs.size();
 	if (count == 0)
 		return;
 	for(uint32 i = 0; i < count; ++i) {
@@ -805,7 +805,7 @@ void BmImap::StateRetrieve()
 			BM_LOG( BM_LogRecv,
 					  BmString("Received mail of size ")<<mAnswerText.Length()
 							<< " bytes in " << duration << " seconds => "
-							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
+							<< mAnswerText.Length()/(int32)duration/1024.0 << "KB/s");
 		}
 		if ((uint32)mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
 			// as this actually happens (what the heck?) we simply

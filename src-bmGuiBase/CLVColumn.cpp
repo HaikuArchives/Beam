@@ -53,9 +53,9 @@ CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width,
 			fLabelName = labelname;
 		else 
 			fLabelName = label;
-		if(CLV_HEADER_TRUNCATE)
+		if(fFlags & CLV_HEADER_TRUNCATE)
 		{
-			int32 truncated_text_length = strlen(label)+3;
+			int32 truncated_text_length = (int32)strlen(label)+3;
 			fTruncatedText = new char[truncated_text_length];
 			fTruncatedText[0] = 0;
 			fCachedRect.Set(-1,-1,-1,-1);		
@@ -238,7 +238,7 @@ BRect CLVColumn::TruncateText(float column_width)
 		{
 			//Figure out which region just got changed
 			int32 cmppos;
-			int32 cmplen = strlen(new_text);
+			int32 cmplen = (int32)strlen(new_text);
 			char remember = 0;
 			for(cmppos = 0; cmppos <= cmplen; cmppos++)
 				if(new_text[cmppos] != fTruncatedText[cmppos])
@@ -261,7 +261,7 @@ void GetTruncatedString(const char* full_string, char* truncated, float width, i
 	const BFont* font)
 {
 	Strtcpy(truncated,full_string,truncate_buf_size);
-	int32 choppos = strlen(truncated)-1;
+	int32 choppos = (int32)strlen(truncated)-1;
 	while(choppos >= -2 && font->StringWidth(truncated) > width)
 	{
 		while(choppos > 0 && truncated[choppos-1] == ' ')

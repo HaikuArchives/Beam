@@ -394,8 +394,8 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		// adjust special-mail-count accordingly...
-		int32 specialMailCount = folder->SpecialMailCount() 
-									+ folder->SpecialMailCountForSubfolders();
+		int32 specialMailCount = (int32)(folder->SpecialMailCount() 
+									+ folder->SpecialMailCountForSubfolders());
 		parent->BumpSpecialMailCountForSubfolders( -1*specialMailCount);
 		// ...and remove folder from list:
 		TheMailFolderList->RemoveItemFromList( folder.Get());
@@ -496,8 +496,8 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 										: BmString( "<outside>")));
 				// adjust special-mail-count accordingly...
 				int32 specialMailCount 
-					= folder->SpecialMailCount() 
-						+ folder->SpecialMailCountForSubfolders();
+					= (int32)(folder->SpecialMailCount() 
+						+ folder->SpecialMailCountForSubfolders());
 				if (oldParent)
 					oldParent->BumpSpecialMailCountForSubfolders( -1*specialMailCount);
 				// ...and remove from folder-list:

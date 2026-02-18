@@ -516,7 +516,7 @@ void TextEntryAlertTextEntryView::AttachedToWindow()
 	const char* text = Text();
 	if(text)
 	{
-		int32 length = strlen(text);
+		int32 length = (int32)strlen(text);
 		Select(length,length);
 	}
 }

@@ -102,19 +102,19 @@ class BmSpamFilter : public BmFilterAddon {
 		//     prime numbers, and preferably superincreasing, though both of 
 		//     those are not strict requirements.
 		//
-		static const long HashCoeff[20];
+		static const int32 HashCoeff[20];
 		
 		static float FeatureWeight[6];
 
 		static unsigned char FileVersion[4];
 		
 		/* max feature value */
-		static const unsigned long WindowLen;
+		static const uint32 WindowLen;
 
 		/* max feature value */
-		static const unsigned long FeatureBucketValueMax;
+		static const uint32 FeatureBucketValueMax;
 		/* max number of features */
-		static const unsigned long DefaultFileLength;
+		static const uint32 DefaultFileLength;
 		
 		/* shall we try to do small cleanups automatically, if the hash-chains
 		   get too long? */ 
@@ -128,12 +128,12 @@ class BmSpamFilter : public BmFilterAddon {
 	
 	public:
 		static void Microgroom( FeatureBucket* hash, Header* header,
-										unsigned long hindex);
+										uint32 hindex);
 	private:
 		static void PackData( Header* header, FeatureBucket* hash,
-									 unsigned long packstart, unsigned long packlen);
+									 uint32 packstart, uint32 packlen);
 		static void PackDataSeg( Header* header, FeatureBucket* hash,
-										 unsigned long packstart, unsigned long packlen);
+										 uint32 packstart, uint32 packlen);
 
 		/*------------------------------------------------------------------------------*\
 			SpamRelevantMailtextSelector
@@ -204,7 +204,7 @@ class BmSpamFilter : public BmFilterAddon {
 			FeatureBucket* mHash;
 			Header* mHeader;
 			bool mRevert;
-			deque<unsigned long> mHashpipe;
+			deque<uint32> mHashpipe;
 			status_t mStatus;
 		};
 
@@ -232,28 +232,28 @@ class BmSpamFilter : public BmFilterAddon {
 
 			char *mSeenFeatures[MaxHash];
 
-			deque<unsigned long> mHashpipe;
+			deque<uint32> mHashpipe;
 			status_t mStatus;
 			
-			unsigned long mHits[MaxHash];
+			uint32 mHits[MaxHash];
 				// actual hits per feature per classifier
-			unsigned long mTotalHits[MaxHash];
+			uint32 mTotalHits[MaxHash];
 				// actual total hits per classifier
-			unsigned long mLearnings[MaxHash];
+			uint32 mLearnings[MaxHash];
 				// total learnings per classifier
-			unsigned long mTotalLearnings;
-			unsigned long mTotalFeatures;
+			uint32 mTotalLearnings;
+			uint32 mTotalFeatures;
 				//  total features
-			unsigned long mUniqueFeatures[MaxHash];
+			uint32 mUniqueFeatures[MaxHash];
 				//  found features per class
-			unsigned long mMissedFeatures[MaxHash];
+			uint32 mMissedFeatures[MaxHash];
 				//  missed features per class
 			double mPtc[MaxHash];	
 				// current running probability of this class
 			double mPltc[MaxHash];
 				// current local probability of this class
 			double mOverallPr;
-			unsigned long mHashLen[MaxHash];
+			uint32 mHashLen[MaxHash];
 			const char *mHashName[MaxHash];
 		};
 

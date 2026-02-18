@@ -33,7 +33,7 @@ BmMailRefFilter::BmMailRefFilter(const BmString& filterLabel,
 BmMailRefFilter::BmMailRefFilter(const BMessage* archive)
 	:	mTimeSpan(archive->FindString(MSG_TIME_SPAN))
 {
-	int32 numberOfDays = atol(mTimeSpan.String());
+	int32 numberOfDays = (int32)atol(mTimeSpan.String());
 	_SetThreshold(numberOfDays);
 }
 

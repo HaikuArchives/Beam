@@ -17,6 +17,8 @@ if ! $(haveOpenSsl) {
 	haveOpenSsl = [ GLOB /boot/system/develop/headers/openssl : ssl.h ] ;
 }
 if $(haveOpenSsl) {
+	C++FLAGS += -Wno-error ;
+
 	# <pe-src>
 	AddOn OpenSslNetEndpoint
 		:  

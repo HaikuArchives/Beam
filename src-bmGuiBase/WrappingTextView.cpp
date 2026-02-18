@@ -37,9 +37,13 @@ WrappingTextView::UndoInfo::UndoInfo( bool ins, const char* t, int32 len, uint32
 	,	deleteToRight( delToRight)
 { 
 	if (runs) {
-		int32 sz = sizeof(int32)+runs->count*sizeof(text_run);
+		int32 sz = (int32)sizeof(int32)+runs->count*(int32)sizeof(text_run);
 		text_runs = (text_run_array*)malloc( sz);
-		memcpy( text_runs, runs, sz);
+		for (int32 i = 0; i < runs->count; i++) {
+			text_runs->runs[i].offset = runs->runs[i].offset;
+			text_runs->runs[i].font = runs->runs[i].font;
+			text_runs->runs[i].color = runs->runs[i].color;
+		}
 	}
 }
 
@@ -52,9 +56,13 @@ WrappingTextView::UndoInfo::UndoInfo( const UndoInfo& ui)
 	,	deleteToRight( ui.deleteToRight)
 { 
 	if (ui.text_runs) {
-		int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
+		int32 sz = (int32)sizeof(int32)+ui.text_runs->count*(int32)sizeof(text_run);
 		text_runs = (text_run_array*)malloc( sz);
-		memcpy( text_runs, ui.text_runs, sz);
+		for (int32 i = 0; i < ui.text_runs->count; i++) {
+			text_runs->runs[i].offset = ui.text_runs->runs[i].offset;
+			text_runs->runs[i].font = ui.text_runs->runs[i].font;
+			text_runs->runs[i].color = ui.text_runs->runs[i].color;
+		}
 	}
 }
 
@@ -65,9 +73,14 @@ WrappingTextView::UndoInfo WrappingTextView::UndoInfo::operator=( const UndoInfo
 	fixed = ui.fixed;
 	deleteToRight = ui.deleteToRight;
 	if (ui.text_runs) {
-		int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
+		int32 sz = (int32)sizeof(int32)+ui.text_runs->count*(int32)sizeof(text_run);
 		text_runs = (text_run_array*)malloc( sz);
-		memcpy( text_runs, ui.text_runs, sz);
+		for (int32 i = 0; i < ui.text_runs->count; i++) {
+			text_runs->runs[i].offset = ui.text_runs->runs[i].offset;
+			text_runs->runs[i].font = ui.text_runs->runs[i].font;
+			text_runs->runs[i].color = ui.text_runs->runs[i].color;
+		}
+
 	} else
 		text_runs = NULL;
 	return *this;
@@ -116,9 +129,14 @@ void WrappingTextView::UndoInfo::JoinTextRuns( const text_run_array* a_runs, int
 			text_runs = new_runs;
 		} else {
 			// copy given textrun:
-			int32 sz = sizeof(int32)+a_runs->count*sizeof(text_run);
+			int32 sz = (int32)sizeof(int32)+a_runs->count*(int32)sizeof(text_run);
 			text_runs = (text_run_array*)malloc( sz);
-			memcpy( text_runs, a_runs, sz);
+			for (int32 i = 0; i < a_runs->count; i++) {
+				text_runs->runs[i].offset = a_runs->runs[i].offset;
+				text_runs->runs[i].font = a_runs->runs[i].font;
+				text_runs->runs[i].color = a_runs->runs[i].color;
+			}
+
 		}
 	}
 }
@@ -190,7 +208,7 @@ void WrappingTextView::InsertText(const char *a_text, int32 a_length, int32 a_of
 	BTextView::InsertText(a_text, a_length, a_offset, a_runs);
 	if (IsEditable()) {
 		if (!m_in_undo_redo) {
-			uint32 sz = m_undo_vect.size();
+			uint32 sz = (uint32)m_undo_vect.size();
 			if (m_curr_undo_index >= sz)
 				m_undo_vect.resize( MAX( 25, sz*2));
 			bool canConcat = false;
@@ -217,7 +235,7 @@ void WrappingTextView::DeleteText(int32 start, int32 finish)
 	if (IsEditable()) {
 		if (!m_in_undo_redo) {
 			bool deleteToRight = m_last_key_was_del;
-			uint32 sz = m_undo_vect.size();
+			uint32 sz = (uint32)m_undo_vect.size();
 			if (m_curr_undo_index >= sz)
 				m_undo_vect.resize( MAX( 25, sz*2));
 			text_run_array* runs = RunArray( start, finish);

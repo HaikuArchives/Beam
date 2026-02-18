@@ -34,7 +34,7 @@
 static BmString CollectSslErrorString()
 {
 	BmString errStr;
-	uint32 err;
+	unsigned long err;
 	char errBuf[256];
 	while((err = ERR_get_error()) != 0) {
 		ERR_error_string(err, errBuf);
@@ -399,7 +399,7 @@ int32 BmOpenSslNetEndpoint::Send( const void* buffer, size_t size, int flags) {
 	if (!buffer)
 		return B_BAD_VALUE;
 
-	int result = SSL_write( mSSL, buffer, size);
+	int result = SSL_write( mSSL, buffer, (int)size);
 	if (result > 0)
 		return result;
 
@@ -418,7 +418,7 @@ int32 BmOpenSslNetEndpoint::Receive( void* buffer, size_t size, int flags) {
 	if (!buffer)
 		return B_BAD_VALUE;
 
-	int result = SSL_read( mSSL, buffer, size);
+	int result = SSL_read( mSSL, buffer, (int)size);
 	if (result > 0)
 		return result;
 
@@ -802,7 +802,7 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 		if (certID == acceptedCertID)
 			return X509_V_OK;
 		
-		result = SSL_get_verify_result(mSSL);
+		result = (status_t)SSL_get_verify_result(mSSL);
 		BmString namesFoundInCert;
 		bool hostVerified = _VerifyHostname(cert, serverName, namesFoundInCert);
 		X509_free(cert);

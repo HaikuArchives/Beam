@@ -110,7 +110,7 @@ status_t BmNetEndpointRoster::GetEncryptionInfo(BMessage* encryptionInfo)
 	_InitializeIfNeeded();
 	if (!encryptionInfo)
 		return B_BAD_VALUE;
-		*encryptionInfo = mEncryptionInfo;
+	*encryptionInfo = mEncryptionInfo;
 	return B_OK;
 }
 

@@ -224,7 +224,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 	pathFile.GetSize(&size);
 	char* buf = str.LockBuffer(int32(size+1));
 	if (!buf) {
-		fprintf(stderr, "not enough memory for %Lu bytes\n", size);
+		fprintf(stderr, "not enough memory for %" B_PRIdOFF " bytes\n", size);
 		return;
 	}
 	sz = pathFile.Read(buf, size_t(size));
@@ -235,7 +235,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 	BmRef<BmMail> mail;
 	entry_ref eref;
 	BEntry entry;
-	unsigned int pvs = min_c(pathVect.size(), Limit);
+	unsigned int pvs = min_c((uint32)pathVect.size(), Limit);
 	int perfs = PerfCount >= 0 ? min_c(PerfCount, (int32)pvs) : pvs/5;
 	char* resultBuf = new char [pvs];
 	for(uint32 i=0; i<pvs; ++i) {
@@ -342,7 +342,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 		ri.totalOverall = 100.0-(ri.falsePos+ri.falseNeg)*100.0/perfs;
 		fprintf(stderr,"%s done (%d messages in %ld secs)\n", pathfileName,
 							pvs, time(NULL)-starttime);
-		fprintf(stderr,"\tsetup: reinforce=(S:%ld/T:%ld) unsure=(S:%ld/T:%ld) dehtml=%s keep-atags=%s\n", 
+		fprintf(stderr,"\tsetup: reinforce=(S:%" B_PRId32 "/T:%" B_PRId32 ") unsure=(S:%" B_PRId32 "/T:%" B_PRId32 ") dehtml=%s keep-atags=%s\n", 
 							ThresholdForSpam, ThresholdForTofu,
 							UnsureForSpam, UnsureForTofu,
 							DeHtml ? "yes" : "no", KeepATags ? "yes" : "no");
@@ -519,7 +519,7 @@ main( int argc, char** argv)
 		ri.totalOverall /= argc-as;
 		fprintf(stderr,"############################################################\n");
 		fprintf(stderr,"overall mean values:\n");
-		fprintf(stderr,"\tsetup: reinf=(S:%ld/T:%ld) unsure=(S:%ld/T:%ld) dehtml=%s keep-atags=%s\n", 
+		fprintf(stderr,"\tsetup: reinf=(S:%" B_PRId32 "/T:%" B_PRId32 ") unsure=(S:%" B_PRId32 "/T:%" B_PRId32 ") dehtml=%s keep-atags=%s\n", 
 							ThresholdForSpam, ThresholdForTofu,
 							UnsureForSpam, UnsureForTofu,
 							DeHtml ? "yes" : "no", KeepATags ? "yes" : "no");
@@ -557,18 +557,18 @@ main( int argc, char** argv)
 									: 0;
 		fprintf(stderr,"************************************************************\n");
 		fprintf(stderr, "          SPAM-datafile       |          TOFU-datafile\n");
-		fprintf(stderr, " features: %6ld (%3ld%% used) | features: %6ld (%3ld%% used)\n",
+		fprintf(stderr, " features: %6" B_PRId32 " (%3" B_PRId32 "%% used) | features: %6" B_PRId32 " (%3" B_PRId32 "%% used)\n",
 								spamBuckets, 100*spamBucketsUsed/spamBuckets, 
 								tofuBuckets, 100*tofuBucketsUsed/tofuBuckets);
-		fprintf(stderr, " average value:       %6ld  | average value:        %6ld\n",
+		fprintf(stderr, " average value:       %6" B_PRId32 "  | average value:        %6" B_PRId32 "\n",
 								spamAverageValue, tofuAverageValue);
-		fprintf(stderr, " average chain-length: %5ld  | average chain-length:  %5ld\n",
+		fprintf(stderr, " average chain-length: %5" B_PRId32 "  | average chain-length:  %5" B_PRId32 "\n",
 								spamChainsAverageLength, tofuChainsAverageLength);
-		fprintf(stderr, " learnings:           %6ld  | learnings:            %6ld\n",
+		fprintf(stderr, " learnings:           %6" B_PRId32 "  | learnings:            %6" B_PRId32 "\n",
 								spamLearnings, tofuLearnings);
-		fprintf(stderr, " classifications:     %6ld  | classifications:      %6ld\n",
+		fprintf(stderr, " classifications:     %6" B_PRId32 "  | classifications:      %6" B_PRId32 "\n",
 								spamClassifications, tofuClassifications);
-		fprintf(stderr, " mistakes:            %6ld  | mistakes:             %6ld\n",
+		fprintf(stderr, " mistakes:            %6" B_PRId32 "  | mistakes:             %6" B_PRId32 "\n",
 								spamMistakes, tofuMistakes);
 		fprintf(stderr, " correctness(FP):     %6.2f  | correctness (all):    %6.2f\n",
 								100.0-errorsFP, 100.0-errorsAll);

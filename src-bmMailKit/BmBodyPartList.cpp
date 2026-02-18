@@ -168,7 +168,7 @@ int32 BmBodyPart::nObjectID = 0;
 BmString BmBodyPart::NextObjectID() {
 	BmString s;
 	char* buf=s.LockBuffer( 5);
-	sprintf( buf, "%5.5ld", ++nObjectID);
+	sprintf( buf, "%5.5" B_PRId32, ++nObjectID);
 	s.UnlockBuffer( 5);
 	return s;
 }
@@ -556,7 +556,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 					char* endOfLine = strchr( nPos, '\r');
 					BM_LOG2( BM_LogMailParse, "...done (init of boundary check)");
 					if (endOfLine) {
-						int32 len=endOfLine-nPos;
+						int32 len= (int32)(endOfLine - nPos);
 						BM_LOG2( BM_LogMailParse, 
 									BmString("setting checkStr to length ") << len);
 						checkStr.SetTo( nPos, len);
@@ -581,10 +581,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				}
 			}
 			if (nPos) {
-				int32 startOffs = startPos-msgtext.String()+firstBoundaryLen;
+				int32 startOffs = (int32)(startPos - msgtext.String()) + firstBoundaryLen;
 				BM_LOG2( BM_LogMailParse, 
 							"Subpart of multipart found will be added to array");
-				int32 len = std::max((long)0,nPos-msgtext.String()-startOffs-2);
+				int32 len = std::max((int32)0, (int32)(nPos - msgtext.String()) - startOffs - 2);
 							// -2 in order to leave out \r\n before boundary
 				BmBodyPart *subPart 
 					= new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
@@ -596,7 +596,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				AddSubItem( subPart);
 				startPos = nPos;
 			} else {
-				int32 startOffs = startPos-msgtext.String()+firstBoundaryLen;
+				int32 startOffs = (int32)(startPos - msgtext.String()) + firstBoundaryLen;
 				if (start+length > startOffs) {
 					// the final boundary is missing, we include the remaining 
 					// part as a sub-bodypart anyway:
@@ -1106,7 +1106,7 @@ bool BmBodyPart::MimeTypeIsPotentiallyHarmful( const BmString& realMT) {
 	vector<BmString> trustInfos;
 	BmString ti = ThePrefs->GetString( "MimeTypeTrustInfo");
 	split( BmPrefs::nListSeparator, ti, trustInfos);
-	int32 numTrustInfos = trustInfos.size();
+	int32 numTrustInfos = (int32)trustInfos.size();
 	BmString mt;
 	BmString trust;
 	BmString trustInfo;

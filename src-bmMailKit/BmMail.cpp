@@ -352,7 +352,7 @@ bool BmMail::StartJob() {
 			char* pos = buf+offs;
 			ssize_t read = mailFile.Read( 
 				pos, 
-				mailSize-offs < blocksize 
+				mailSize-offs < (off_t)blocksize 
 					? size_t(mailSize-offs)
 					: blocksize
 			);
@@ -362,11 +362,11 @@ bool BmMail::StartJob() {
 				throw BM_runtime_error( BmString("Could not fetch mail from "
 															"file\n\t<") 
 													<< eref.name << ">\n\n Result: " 
-													<< strerror(read));
+													<< strerror((int32)read));
 			if (!read)
 				break;
 			realSize += read;
-			offs += read;
+			offs += (int32)read;
 		}
 		if (!skipChecks && !ShouldContinue())
 			return false;

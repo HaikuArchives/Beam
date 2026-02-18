@@ -556,8 +556,8 @@ void BmDotstuffDecoder::Filter( const char* srcBuf, uint32& srcLen,
 		mAtStartOfLine = (c=='\n');
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( mJob->LogType(), "dotstuff-decode: done");
 }
 
@@ -609,8 +609,8 @@ void BmDotstuffEncoder::Filter( const char* srcBuf, uint32& srcLen,
 		mAtStartOfLine = (c=='\n');
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( mJob->LogType(), "dotstuff-encode: done");
 }
 
@@ -629,7 +629,7 @@ void BmDotstuffEncoder::Finalize( char* destBuf, uint32& destLen)
 		*dest++ = '\n';
 		mIsFinalized = true;
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 }
 
 

@@ -238,7 +238,7 @@ bool ColumnListView::AddColumn(CLVColumn* Column)
 		return false;
 
 	//Check if this should be locked at the beginning or end, and adjust its position if necessary
-	if(!Column->Flags() & CLV_LOCK_AT_END)
+	if(!(Column->Flags() & CLV_LOCK_AT_END))
 	{
 		bool Repeat;
 		if(Column->Flags() & CLV_LOCK_AT_BEGINNING)
@@ -336,7 +336,7 @@ bool ColumnListView::AddColumnList(BList* NewColumns)
 		CLVColumn* Column = (CLVColumn*)NewColumns->ItemAt(Counter);
 		//Check if this should be locked at the beginning or end, and adjust its position if necessary
 		int32 DisplayIndex = NumberOfColumns;
-		if(!Column->Flags() & CLV_LOCK_AT_END)
+		if(!(Column->Flags() & CLV_LOCK_AT_END))
 		{
 			bool Repeat;
 			if(Column->Flags() & CLV_LOCK_AT_BEGINNING)
@@ -1068,7 +1068,7 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 		uint32 ThisItemLevel = ThisItem->OutlineLevel();
 		if(ThisItemLevel == ThisLevel)
 		{
-			ThisLevelItems.AddItem((void*)Counter);
+			ThisLevelItems.AddItem((void*)(uintptr_t)Counter);
 		}
 		else if(ThisItemLevel < ThisLevel)
 			break;

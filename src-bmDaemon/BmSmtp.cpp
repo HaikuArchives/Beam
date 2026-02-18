@@ -104,14 +104,14 @@ void BmSmtpStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 			}
 			mAtStartOfLine = (*src=='\n');
 		}
-		uint32 statusSize = src-srcBuf;
+		uint32 statusSize = (uint32)(src - srcBuf);
 		mStatusText.Append( srcBuf, statusSize);
 		if (mHaveStatus) {
 			src++;								// skip newline
 			if (!needData)
 				mEndReached = true;
 		}
-		srcLen = src-srcBuf;
+		srcLen = (uint32)(src - srcBuf);
 		destLen = 0;
 	}
 }
@@ -600,7 +600,7 @@ void BmSmtp::StateAuth() {
 			version for each Bcc-recipient (SpecialHeaderForEachBcc=true)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateSendMails() {
-	mMailCount = mQueuedRefVect.size();
+	mMailCount = (int32)mQueuedRefVect.size();
 
 	mMsgTotalSize = 0;
 	vector<BmRef<BmMailRef> > mailRefs;
@@ -821,7 +821,7 @@ void BmSmtp::Data( BmMail* mail, const BmString& headerText, BmString forBcc) {
 		BM_LOG( BM_LogSmtp,
 				  BmString("Sent mail of size ") << len
 						<< " bytes in " << duration << " seconds => "
-						<< len/duration/1024.0 << "KB/s");
+						<< len/(int32)duration/1024.0 << "KB/s");
 	}
 	CheckForPositiveAnswer();
 }

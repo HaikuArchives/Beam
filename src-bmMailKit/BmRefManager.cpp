@@ -390,8 +390,8 @@ BmAutolockCheckGlobal::~BmAutolockCheckGlobal()
 \*------------------------------------------------------------------------------*/
 bool BmAutolockCheckGlobal::IsLocked() 
 { 
-	return mLocker && mLocker->IsLocked()
-			|| mLooper && mLooper->IsLocked();
+	return (mLocker && mLocker->IsLocked())
+			|| (mLooper && mLooper->IsLocked());
 }
 
 /*------------------------------------------------------------------------------*\

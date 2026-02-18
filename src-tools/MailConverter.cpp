@@ -73,7 +73,7 @@ void MailConverter( const char* folder)
 		file.GetSize(&size);
 		buf = str.LockBuffer(int32(size+1));
 		if (!buf) {
-			fprintf(stderr, "not enough memory for %Lu bytes\n", size);
+			fprintf(stderr, "not enough memory for %" B_PRIdOFF " bytes\n", size);
 			errorCount++;
 			continue;
 		}
@@ -86,7 +86,7 @@ void MailConverter( const char* folder)
 		str.UnlockBuffer(int32(sz));
 		if (sz != size) {
 			fprintf(
-				stderr, "unable to read %Ld bytes from file (only got %Ld)\n", 
+				stderr, "unable to read %" B_PRIdOFF " bytes from file (only got %" B_PRIdOFF ")\n", 
 				size, sz
 			);
 			errorCount++;

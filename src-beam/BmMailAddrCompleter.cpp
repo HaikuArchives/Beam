@@ -196,14 +196,14 @@ void BmMailAddressCompleter::MailAddrPatternSelector
 			size_t numChars = endPos-pos;
 			pos += numChars;
 			if (*endPos == ',') {
-				pattLen = endPos-text.String()-pattStart;
-				if (caretPos <= pattStart+pattLen)
+				pattLen = (int32)(endPos - text.String()) - pattStart;
+				if (caretPos <= pattStart + pattLen)
 					break;
 				pos++;
-				pattStart = pos-text.String();
+				pattStart = (int32)(pos - text.String());
 			}
 			if (!*endPos)
-				pattLen = endPos-text.String()-pattStart;
+				pattLen = (int32)(endPos-text.String()) - pattStart;
 		}
 	}
 	while(isspace(text[pattStart])) {

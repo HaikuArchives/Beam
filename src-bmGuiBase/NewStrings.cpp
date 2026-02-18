@@ -23,7 +23,7 @@ float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* f
 //BFont::GetStringWidths(), then finds the longest string width in the array and returns that width.
 //If a string_widths array is provided, it fills it in with the length of each string.
 {
-	int32 strlens_fixed[20];
+	int32 strlens_fixed[20] = { 0 };
 	int32* strlens;
 	bool release_string_lengths = false;
 	if(num_strings <= 20)
@@ -34,7 +34,7 @@ float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* f
 		release_string_lengths = true;
 	}
 
-	float strwidths_fixed[20];
+	float strwidths_fixed[20] = { 0 };
 	bool release_string_widths = false;
 	if(string_widths == NULL)
 	{
@@ -49,7 +49,7 @@ float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* f
 
 	int32 i;
 	for(i = 0; i < num_strings; i++)
-		strlens[i] = strlen(strings[i]);
+		strlens[i] = (int32)strlen(strings[i]);
 	font->GetStringWidths(strings,strlens,num_strings,string_widths);
 	float max = string_widths[0];
 	for(i = 1; i < num_strings; i++)
@@ -74,7 +74,7 @@ char* Strdup_new(const char* source)
 
 char* Strcat_new(const char* string_1, const char* string_2)
 {
-	int len_1 = strlen(string_1);
+	int len_1 = (int)strlen(string_1);
 	char* dest = new char[len_1+strlen(string_2)+1];
 	strcpy(dest,string_1);
 	strcpy(&dest[len_1],string_2);
@@ -84,8 +84,8 @@ char* Strcat_new(const char* string_1, const char* string_2)
 
 char* Strcat_new(const char* string_1, const char* string_2, const char* string_3)
 {
-	int len_1 = strlen(string_1);
-	int len_2 = strlen(string_2);
+	int len_1 = (int)strlen(string_1);
+	int len_2 = (int)strlen(string_2);
 	char* dest = new char[len_1+len_2+strlen(string_3)+1];
 	strcpy(dest,string_1);
 	strcpy(&dest[len_1],string_2);
@@ -96,9 +96,9 @@ char* Strcat_new(const char* string_1, const char* string_2, const char* string_
 
 char* Strcat_new(const char* string_1, const char* string_2, const char* string_3, const char* string_4)
 {
-	int len_1 = strlen(string_1);
-	int len_2 = strlen(string_2);
-	int len_3 = strlen(string_3);
+	int len_1 = (int)strlen(string_1);
+	int len_2 = (int)strlen(string_2);
+	int len_3 = (int)strlen(string_3);
 	char* dest = new char[len_1+len_2+len_3+strlen(string_4)+1];
 	strcpy(dest,string_1);
 	strcpy(&dest[len_1],string_2);

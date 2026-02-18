@@ -51,7 +51,7 @@ BmString TimeToString( time_t utc, const char* format) {
 	struct tm ltm;
 	localtime_r( &utc, &ltm);
 	strftime( buf, bufsize, format, &ltm);
-	s.UnlockBuffer( strlen(buf));
+	s.UnlockBuffer( (int32)strlen(buf));
 	return s;
 }
 
@@ -280,7 +280,7 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 			int32 offs = 0;
 			char* pos = strchr( buf, '\n');
 			if (pos != NULL)
-				offs = 1+pos-buf;
+				offs = 1 + (int32)(pos - buf);
 			logfile->SetSize( 0);
 			logfile->Seek( SEEK_SET, 0);
 			logfile->WriteAt( 0, buf+offs, size_t(newSize-offs));
@@ -426,7 +426,7 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	time_t now = time_t(rtNow/1000000);
 	int32 nowMSecs = int32((rtNow/1000)%1000);
 	char buf[40];
-	sprintf( buf, "<%6ld|%s.%03ld>: ", 
+	sprintf( buf, "<%6" B_PRId32 "|%s.%03" B_PRId32 ">: ", 
 					  threadId, 
 					  TimeToString( now, "%Y-%m-%d|%H:%M:%S").String(),
 					  nowMSecs);

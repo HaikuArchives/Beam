@@ -1260,7 +1260,7 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 		);
 	status_t ret = BArchivable::Archive( archive, deep);
 	if (ret == B_OK) {
-		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());
+		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, (int32)size());
 		ret = archive->AddInt16( BmListModelItem::MSG_VERSION, ArchiveVersion());
 	}
 	if (deep && ret == B_OK) {

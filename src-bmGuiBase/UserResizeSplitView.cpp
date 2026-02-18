@@ -265,7 +265,7 @@ void UserResizeSplitView::Draw(BRect updateRect)
 	BeginLineArray(int32(count*2));
 	float x = m_posture == B_HORIZONTAL ? 2 : m_divider_left_or_top + 1;
 	float y = m_posture == B_HORIZONTAL ? m_divider_left_or_top + 1 : 2;
-	for (int c=0; c<count; ++c) {
+	for (int c=0; c< (int)count; ++c) {
 		AddLine(BPoint(x, y), BPoint(x ,y), darkColor);
 		AddLine(BPoint(x+1, y+1), BPoint(x+1, y+1), lightColor);
 		if (m_posture == B_HORIZONTAL)

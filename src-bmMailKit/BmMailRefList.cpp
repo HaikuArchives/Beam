@@ -145,7 +145,7 @@ bool BmMailRefList::Store() {
 				ret = archive.AddMessage(MSG_FILTER_ARCHIVE, &filterArchive);
 		}
 		if (ret == B_OK) {
-			ret = archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, size())
+			ret = archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, (int32)size())
 					| archive.Flatten( &memIO);
 		}
 		if (ret == B_OK) {
@@ -254,19 +254,24 @@ bool BmMailRefList::StartJob() {
 						<< "> \n\nError:" << strerror(err)
 				);
 			sz -= cacheFile.Position();
-			std::auto_ptr<char> buf(new char [sz]);
-			if ((err = cacheFile.Read(buf.get(), size_t(sz))) < B_OK)
+			char* buf = new char[sz];
+			if ((err = (status_t)cacheFile.Read(buf, size_t(sz))) < B_OK) {
+				delete[] buf;
 				BM_THROW_RUNTIME( 
 					BmString("couldn't read from cache-file <") << filename 
 						<< "> \n\nError:" << strerror(err)
 				);
-			if (err < sz)
+			}
+			if (err < sz) {
+				delete[] buf;
 				BM_THROW_RUNTIME( 
 					BmString("couldn't read ") << sz << " bytes from cache-file <"
 						<< filename << ">, read only " << err << " bytes"
 				);
-			BMemoryIO memIO(buf.get(), size_t(sz));
+			}
+			BMemoryIO memIO(buf, size_t(sz));
 			InstantiateItemsFromStream( &memIO, &msg);
+			delete[] buf;
 #else
 			InstantiateItemsFromStream( &cacheFile, &msg);
 #endif
@@ -445,7 +450,7 @@ void BmMailRefList::InitializeItems() {
 		BmAutolockCheckGlobal lock( ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-		folder->MailCount( ValidCount());
+		folder->MailCount( (int32)ValidCount());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = true;
 		mInitCheck = B_OK;
@@ -514,7 +519,7 @@ void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* heade
 		if (stopped) {
 			Cleanup();
 		} else {
-			folder->MailCount( ValidCount());
+			folder->MailCount( (int32)ValidCount());
 			mNeedsCacheUpdate = false;
 			mNeedsStore = needsStore;
 				// overrule changes caused by reading the cache

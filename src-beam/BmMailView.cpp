@@ -952,7 +952,7 @@ void BmMailView::JobIsDone( bool completed) {
 			= (text_run_array*)malloc( sizeof(int32)+trsiz*mTextRunMap.size());
 		if (!textRunArray)
 			goto out;
-		textRunArray->count = mTextRunMap.size();
+		textRunArray->count = (int32)mTextRunMap.size();
 		int i=0;
 		BmTextRunIter iter;
 		for( iter = mTextRunMap.begin(); iter != mTextRunMap.end(); ++iter, ++i) {

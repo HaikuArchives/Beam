@@ -92,10 +92,10 @@ bool BmMailFilter::ShouldContinue() {
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::StartJob() {
 	try {
-		int32 count = mMails.size();
+		int32 count = (int32)mMails.size();
 		int32 c=0;
 		if (mMailRefs)
-			count += mMailRefs->size();
+			count += (int32)mMailRefs->size();
 		BM_LOG2( BM_LogFilter, 
 					BmString("Starting filter-job for ") << count << " mails.");
 		const float delta =  100.0f / (float(count) / GRAIN);

@@ -82,7 +82,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	int pos;
 	if(body_text)
 	{
-		length = strlen(body_text);
+		length = (int)strlen(body_text);
 		for(pos=0; pos<length; pos++)
 			if(body_text[pos] == '\n')
 				m_num_lines++;

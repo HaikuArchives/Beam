@@ -79,7 +79,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 				if (err == B_OK) {
 					if (bufSize < info.size)
 						buf = (char*)realloc(buf, size_t(info.size));
-					err = prefsFile.ReadAttr(name, info.type, 0, buf, size_t(info.size));
+					err = (status_t)prefsFile.ReadAttr(name, info.type, 0, buf, size_t(info.size));
 				}
 				if (err > 0) {
 					archive.RemoveName(name);
@@ -833,7 +833,7 @@ bool BmPrefs::Store() {
 
 				err = mPrefsMsg.FindData( name, type, j, &value, &msize);
 				if (err == B_OK)
-					err = prefsFile.File().WriteAttr( name, type, 0, value, msize);
+					err = (status_t)prefsFile.File().WriteAttr( name, type, 0, value, msize);
 				if (err < B_OK)
 					BM_THROW_RUNTIME( 
 						BmString("Could not store setting <") 

@@ -276,7 +276,7 @@ void BmAddressList::Remove( BmString singleAddress) {
 \*------------------------------------------------------------------------------*/
 const BmString& BmAddressList
 ::FindAddressMatchingIdentity( BmIdentity* ident, bool needExactMatch) const {
-	int32 count = mAddrList.size();
+	int32 count = (int32)mAddrList.size();
 	for( int i=0; i<count; ++i) {
 		if (mAddrList[i].IsHandledByIdentity( ident, needExactMatch))
 			return mAddrList[i].AddrString();
@@ -289,7 +289,7 @@ const BmString& BmAddressList
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmAddressList::ContainsAddrSpec( const BmString addrSpec) const {
-	int32 count = mAddrList.size();
+	int32 count = (int32)mAddrList.size();
 	for( int i=0; i<count; ++i) {
 		if (addrSpec.ICompare( mAddrList[i].AddrSpec()) == 0)
 			return true;
@@ -317,7 +317,7 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 				;
 			if (*endPos) {
 				// found complete quoted-string.
-				int32 numChars = 1+endPos-pos;
+				int32 numChars = 1 + (int32)(endPos - pos);
 				quotedString.Append( pos+1, numChars-2);
 				pos += numChars;
 			} else {
@@ -336,7 +336,7 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 				;
 			if (*endPos) {
 				// found complete route-address.
-				int32 numChars = 1+endPos-pos;
+				int32 numChars = 1 + (int32)(endPos - pos);
 				currAddr.Append( pos, numChars);
 				pos += numChars;
 			} else {
@@ -351,7 +351,7 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 			// the separator char:
 			for(  endPos=pos; *endPos && *endPos!='"' && *endPos!=','; ++endPos)
 				;
-			int32 numChars = endPos-pos;
+			int32 numChars = (int32)(endPos - pos);
 			currAddr.Append( pos, numChars);
 			pos += numChars;
 			if (*endPos == ',') {
@@ -478,7 +478,7 @@ void BmMailHeader::BmHeaderList::RemoveFieldVal( const BmString& fieldName,
 		-	returns all values found for given fieldName
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::BmHeaderList::GetAllValues( BmMsgContext& msgContext) const {
-	msgContext.headerInfoCount = mHeaders.size();
+	msgContext.headerInfoCount = (int32)mHeaders.size();
 	msgContext.headerInfos = new BmHeaderInfo [msgContext.headerInfoCount];
 	int i = 0;
 	BmHeaderMap::const_iterator iter;
@@ -513,7 +513,7 @@ void BmMailHeader::BmHeaderList
 uint32 BmMailHeader::BmHeaderList::CountValuesFor(const BmString& fieldName) const
 {
 	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
-	return (iter == mHeaders.end()) ? 0 : iter->second.size();
+	return (iter == mHeaders.end()) ? 0 : (uint32)iter->second.size();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -857,7 +857,7 @@ BmAddressList BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		vector<BmString> listFields;
 		BmString lfs = ThePrefs->GetString( "ListFields");
 		split( BmPrefs::nListSeparator, lfs, listFields);
-		int32 numFields = listFields.size();
+		int32 numFields = (int32)listFields.size();
 		for( int i=0; i<numFields; ++i) {
 			if (!IsFieldEmpty( listFields[i])) {
 				listAddr = mAddrMap[listFields[i]];
@@ -969,7 +969,7 @@ void BmMailHeader::PlugDefaultHeader( const BmMailHeader* defaultHeader)
 	BmHeaderMap::const_iterator iter;
 	for(	iter = defaultHeader->mHeaders.begin(); 
 			iter != defaultHeader->mHeaders.end(); ++iter) {
-		uint32 valCount = iter->second.size();
+		uint32 valCount = (uint32)iter->second.size();
 		for( uint32 v=0; v<valCount; ++v) 
 			AddFieldVal( iter->first, (iter->second)[v]);
 	}
@@ -986,7 +986,7 @@ void BmMailHeader::UnplugDefaultHeader( const BmMailHeader* defaultHeader)
 	BmHeaderMap::const_iterator iter;
 	for(	iter = defaultHeader->mHeaders.begin(); 
 			iter != defaultHeader->mHeaders.end(); ++iter) {
-		uint32 valCount = iter->second.size();
+		uint32 valCount = (uint32)iter->second.size();
 		for( uint32 v=0; v<valCount; ++v) 
 			RemoveFieldVal( iter->first, (iter->second)[v]);
 	}
@@ -1035,7 +1035,7 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 			lastpos = pos+2;
 		}
 	}
-	int32 nm = subparts.size();
+	int32 nm = (int32)subparts.size();
 	if (!nm && mMail) {
 		BM_LOGERR ( 
 			BmString("Could not find any header-fields in this header: \n") 
@@ -1156,7 +1156,7 @@ BmString BmMailHeader::StripField( BmString fieldValue,
 				;
 			if (*endPos) {
 				// found complete quoted-string, we copy it:
-				int32 numChars = 1+endPos-pos;
+				int32 numChars = 1 + (int32)(endPos - pos);
 				stripped.Append( pos, numChars);
 				pos += numChars;
 			} else {
@@ -1180,7 +1180,7 @@ BmString BmMailHeader::StripField( BmString fieldValue,
 			}
 			if (*endPos) {
 				// found complete comment, we skip it:
-				int32 numChars = 1+endPos-pos;
+				int32 numChars = 1 + (int32)(endPos - pos);
 				if (commentBuffer)
 					commentBuffer->Append( pos, numChars);
 				pos += numChars;
@@ -1208,7 +1208,7 @@ BmString BmMailHeader::StripField( BmString fieldValue,
 					&& *endPos!=' ';
 					++endPos)
 				;
-			int32 numChars = endPos-pos;
+			int32 numChars = (int32)(endPos - pos);
 			stripped.Append( pos, numChars);
 			pos += numChars;
 		}
@@ -1371,7 +1371,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 					headerIO << "\r\n";
 				} else {
 					const BmValueList& valueList = iter->second;
-					int count = valueList.size();
+					int count = (int)valueList.size();
 					bool encodeIfNeeded = IsEncodingOkForField( fieldName);
 					for( int i=0; i<count; ++i) {
 						headerIO << fieldName << ": " 
@@ -1409,7 +1409,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 							<< "\r\n";
 			} else {
 				const BmValueList& valueList = iter->second;
-				int count = valueList.size();
+				int count = (int)valueList.size();
 				bool encodeIfNeeded = IsEncodingOkForField( fieldName);
 				for( int i=0; i<count; ++i) {
 					headerIO << fieldName << ": " 

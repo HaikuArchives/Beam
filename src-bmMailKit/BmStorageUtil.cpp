@@ -114,7 +114,7 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		for( int i=0; i<count; ++i) {
 			// add refs through AddData in order to set the array's size 
 			// in advance:
-			int32 nmLen = strlen( refs[i].name);
+			int32 nmLen = (int32)strlen( refs[i].name);
 			memcpy( buf, &refs[i], sizeof( entry_ref));
 			strcpy( buf+sizeof( entry_ref)-sizeof(char*), refs[i].name);
 			specifier.AddData( "refs", B_REF_TYPE, buf, 
@@ -234,7 +234,7 @@ bool FetchFile( BmString fileName, BmString& contents) {
 			ssize_t read = file.Read( buf, size_t(size));
 			read = MAX( 0, read);
 			buf[read] = '\0';
-			contents.UnlockBuffer( read);
+			contents.UnlockBuffer((int32)read);
 		} else
 			contents.Truncate( 0);
 		return true;

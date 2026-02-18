@@ -176,7 +176,7 @@ BmString::BmString(const char* str)
 	:_privateData(NULL)
 {
 	if (str != NULL)
-		_Init(str, strlen(str));
+		_Init(str, (int32)strlen(str));
 }
 
 
@@ -327,7 +327,7 @@ BmString&
 BmString::operator=(const char *str)
 {
 	if (str != NULL)
-		_DoAssign(str, strlen(str));	
+		_DoAssign(str, (int32)strlen(str));	
 	else
 		_GrowBy(-Length()); // Empties the string
 	
@@ -524,7 +524,7 @@ BmString&
 BmString::operator+=(const char *str)
 {
 	if (str != NULL)
-		_DoAppend(str, strlen(str));
+		_DoAppend(str, (int32)strlen(str));
 	return *this;
 }
 
@@ -600,7 +600,7 @@ BmString&
 BmString::Prepend(const char *str)
 {
 	if (str != NULL)
-		_DoPrepend(str, strlen(str));
+		_DoPrepend(str, (int32)strlen(str));
 	return *this;
 }
 
@@ -916,9 +916,9 @@ BmString&
 BmString::RemoveFirst(const char *str)
 {
 	if (str != NULL) {
-		int32 pos = _ShortFindAfter(str, strlen(str));
+		int32 pos = _ShortFindAfter(str, (int32)strlen(str));
 		if (pos >= 0)
-			_ShrinkAtBy(pos, strlen(str));
+			_ShrinkAtBy(pos, (int32)strlen(str));
 	}
 	return *this;
 }
@@ -933,7 +933,7 @@ BmString&
 BmString::RemoveLast(const char *str)
 {
 	if (str != NULL) {
-		int32 len = strlen(str);
+		int32 len = (int32)strlen(str);
 		int32 pos = _FindBefore(str, Length(), len);
 		if (pos >= 0)
 			_ShrinkAtBy(pos, len);
@@ -1133,7 +1133,7 @@ BmString::FindFirst(const char *string) const
 {
 	if (string == NULL)
 		return B_BAD_VALUE;
-	return _ShortFindAfter(string, strlen(string));
+	return _ShortFindAfter(string, (int32)strlen(string));
 }
 
 
@@ -1170,7 +1170,7 @@ BmString::FindFirst(const char *string, int32 fromOffset) const
 		return B_BAD_VALUE;
 	if (fromOffset < 0)
 		return B_ERROR;
-	return _FindAfter(string, min_clamp0(fromOffset, Length()), strlen(string));
+	return _FindAfter(string, min_clamp0(fromOffset, Length()), (int32)strlen(string));
 }
 
 
@@ -1194,7 +1194,7 @@ BmString::FindFirst(char c) const
 	if (start == end)
 		return B_ERROR;
 			
-	return start - String();
+	return (int32)(start - String());
 }
 
 
@@ -1223,7 +1223,7 @@ BmString::FindFirst(char c, int32 fromOffset) const
 	if (start >= end)
 		return B_ERROR;
 			
-	return start - String();
+	return (int32)(start - String());
 }
 
 
@@ -1251,7 +1251,7 @@ BmString::FindLast(const char *string) const
 {
 	if (string == NULL)
 		return B_BAD_VALUE;
-	return _FindBefore(string, Length(), strlen(string));
+	return _FindBefore(string, Length(), (int32)strlen(string));
 }
 
 
@@ -1287,7 +1287,7 @@ BmString::FindLast(const char *string, int32 beforeOffset) const
 		return B_BAD_VALUE;
 	if (beforeOffset < 0)
 		return B_ERROR;
-	return _FindBefore(string, min_clamp0(beforeOffset, Length()), strlen(string));
+	return _FindBefore(string, min_clamp0(beforeOffset, Length()), (int32)strlen(string));
 }
 
 
@@ -1311,7 +1311,7 @@ BmString::FindLast(char c) const
 	if (end == start)
 		return B_ERROR;
 			
-	return end - String();
+	return (int32)(end - String());
 }
 
 
@@ -1340,7 +1340,7 @@ BmString::FindLast(char c, int32 beforeOffset) const
 	if (end <= start)
 		return B_ERROR;
 			
-	return end - String();
+	return (int32)(end - String());
 }
 
 
@@ -1356,7 +1356,7 @@ BmString::IFindFirst(const char *string) const
 {
 	if (string == NULL)
 		return B_BAD_VALUE;
-	return _IFindAfter(string, 0, strlen(string));
+	return _IFindAfter(string, 0, (int32)strlen(string));
 }
 
 
@@ -1377,7 +1377,7 @@ BmString::IFindFirst(const char *string, int32 fromOffset) const
 		return B_BAD_VALUE;
 	if (fromOffset < 0)
 		return B_ERROR;
-	return _IFindAfter(string, min_clamp0(fromOffset,Length()), strlen(string));
+	return _IFindAfter(string, min_clamp0(fromOffset,Length()), (int32)strlen(string));
 }
 
 
@@ -1393,7 +1393,7 @@ BmString::IFindLast(const char *string) const
 {
 	if (string == NULL)
 		return B_BAD_VALUE;
-	return _IFindBefore(string, Length(), strlen(string));
+	return _IFindBefore(string, Length(), (int32)strlen(string));
 }
 
 
@@ -1415,7 +1415,7 @@ BmString::IFindLast(const char *string, int32 beforeOffset) const
 	if (beforeOffset < 0)
 		return B_ERROR;
 	return _IFindBefore(string, min_clamp0(beforeOffset,Length()), 
-							  strlen(string));
+							  (int32)strlen(string));
 }
 
 
@@ -1482,11 +1482,11 @@ BmString::ReplaceLast(const char *replaceThis, const char *withThis)
 	if (replaceThis == NULL)
 		return *this;
 		
-	int32 firstStringLength = strlen(replaceThis);	
+	int32 firstStringLength = (int32)strlen(replaceThis);	
 	int32 pos = _FindBefore(replaceThis, Length(), firstStringLength);
 	
 	if (pos >= 0) {
-		int32 len = (withThis ? strlen(withThis) : 0);
+		int32 len = (withThis ? (int32)strlen(withThis) : 0);
 		int32 difference = len - firstStringLength;
 		
 		if (difference > 0) {
@@ -1589,11 +1589,11 @@ BmString::IReplaceLast(const char *replaceThis, const char *withThis)
 	if (replaceThis == NULL)
 		return *this;
 		
-	int32 firstStringLength = strlen(replaceThis);		
+	int32 firstStringLength = (int32)strlen(replaceThis);		
 	int32 pos = _IFindBefore(replaceThis, Length(), firstStringLength);
 	
 	if (pos >= 0) {
-		int32 len = (withThis ? strlen(withThis) : 0);
+		int32 len = (withThis ? (int32)strlen(withThis) : 0);
 		int32 difference = len - firstStringLength;
 		
 		if (difference > 0) {
@@ -1639,7 +1639,7 @@ BmString::ReplaceSet(const char *setOfChars, char with)
 	int32 length = Length();
 	
 	for (int32 pos;;) {
-		pos = strcspn(String() + offset, setOfChars);
+		pos = (int32)strcspn(String() + offset, setOfChars);
 
 		offset += pos;
 		if (offset >= length)
@@ -1655,7 +1655,7 @@ BmString::ReplaceSet(const char *setOfChars, char with)
 BmString&
 BmString::ReplaceSet(const char *setOfChars, const char *with)
 {
-	int32 withLen = with ? strlen(with) : 0;
+	int32 withLen = with ? (int32)strlen(with) : 0;
 	if (withLen == 1)
 		// delegate simple case:
 		return ReplaceSet( setOfChars, *with);
@@ -1670,7 +1670,7 @@ BmString::ReplaceSet(const char *setOfChars, const char *with)
 	int32 pos = 0;
 	for (int32 offset = 0; offset < len; offset += (pos+searchLen)) 
 	{
-		pos = strcspn(_privateData + offset, setOfChars);
+		pos = (int32)strcspn(_privateData + offset, setOfChars);
 		if (pos + offset >= len)
 			break;
 		if (!positions.Add(offset + pos))
@@ -1733,7 +1733,7 @@ BmString::UnlockBuffer(int32 length)
 	int32 len = length;
 
 	if (len < 0)
-		len = (_privateData == NULL) ? 0 : strlen(_privateData);
+		len = (_privateData == NULL) ? 0 : (int32)strlen(_privateData);
 
 	if (len != Length())
 		_GrowBy(len - Length());
@@ -1854,7 +1854,7 @@ BmString::CharacterEscape(const char *setOfCharsToEscape, char escapeWith)
 	int32 len = Length();
 	int32 pos = 0;
 	for (int32 offset = 0; offset < len; offset += pos + 1) {
-		if ((pos = strcspn(_privateData + offset, setOfCharsToEscape)) < len - offset)
+		if ((pos = (int32)strcspn(_privateData + offset, setOfCharsToEscape)) < len - offset)
 			if (!positions.Add(offset + pos))
 				return *this;
 	}
@@ -1921,7 +1921,7 @@ BmString&
 BmString::operator<<(const char *str)
 {
 	if (str != NULL)
-		_DoAppend(str, strlen(str));
+		_DoAppend(str, (int32)strlen(str));
 	return *this;	
 }
 
@@ -1968,7 +1968,7 @@ BmString&
 BmString::operator<<(uint32 i)
 {
 	char num[64];
-	sprintf(num, "%lu", i);
+	sprintf(num, "%" B_PRIu32, i);
 	
 	return *this << num;
 }
@@ -1978,7 +1978,7 @@ BmString&
 BmString::operator<<(int32 i)
 {
 	char num[64];
-	sprintf(num, "%ld", i);
+	sprintf(num, "%" B_PRId32, i);
 	
 	return *this << num;
 }
@@ -1988,7 +1988,7 @@ BmString&
 BmString::operator<<(uint64 i)
 {
 	char num[64];
-	sprintf(num, "%Lu", i);
+	sprintf(num, "%" B_PRIu64, i);
 	
 	return *this << num;
 }
@@ -1998,7 +1998,7 @@ BmString&
 BmString::operator<<(int64 i)
 {
 	char num[64];
-	sprintf(num, "%Ld", i);
+	sprintf(num, "%" B_PRId64, i);
 	
 	return *this << num;
 }
@@ -2039,12 +2039,12 @@ BmString::_Alloc(int32 dataLen, bool allocateEmptyString)
 		} else
 			dataLen = 0;
 	}
-	int32 allocLen = dataLen + sizeof(int32) + 1;
+	int32 allocLen = dataLen + (int32)sizeof(int32) + 1;
 	dataPtr = (char *)realloc(dataPtr, allocLen);
 	if (dataPtr) {
 		dataPtr += sizeof(int32);
 		_privateData = dataPtr;
-		int32 newLen = allocLen - sizeof(int32) - 1;
+		int32 newLen = allocLen - (int32)sizeof(int32) - 1;
 		_SetLength(newLen);
 		_privateData[newLen] = '\0';
 	}
@@ -2139,7 +2139,7 @@ BmString::_FindAfter(const char *str, int32 offset, int32 /*strlen*/) const
 	char *ptr = strstr(String() + offset, str);
 
 	if (ptr != NULL)
-		return ptr - String();
+		return (int32)(ptr - String());
 	
 	return B_ERROR;
 }
@@ -2151,7 +2151,7 @@ BmString::_IFindAfter(const char *str, int32 offset, int32 /*strlen*/) const
 	char *ptr = strcasestr(String() + offset, str);
 
 	if (ptr != NULL)
-		return ptr - String();
+		return (int32)(ptr - String());
 
 	return B_ERROR;
 }
@@ -2163,7 +2163,7 @@ BmString::_ShortFindAfter(const char *str, int32 /*len*/) const
 	char *ptr = strstr(String(), str);
 	
 	if (ptr != NULL)
-		return ptr - String();
+		return (int32)(ptr - String());
 		
 	return B_ERROR;
 }
@@ -2177,7 +2177,7 @@ BmString::_FindBefore(const char *str, int32 offset, int32 strlen) const
 		
 		while (ptr >= _privateData) {	
 			if (!memcmp(ptr, str, strlen))
-				return ptr - _privateData; 
+				return (int32)(ptr - _privateData); 
 			ptr--;
 		}
 	}
@@ -2193,7 +2193,7 @@ BmString::_IFindBefore(const char *str, int32 offset, int32 strlen) const
 		
 		while (ptr1 >= _privateData) {
 			if (!strncasecmp(ptr1, str, strlen))
-				return ptr1 - _privateData; 
+				return (int32)(ptr1 - _privateData); 
 			ptr1--;
 		}
 	}
@@ -2211,12 +2211,12 @@ BmString::_DoReplace(const char *findThis, const char *replaceWith, int32 maxRep
 	
 	typedef int32 (BmString::*TFindMethod)(const char *, int32, int32) const;
 	TFindMethod findMethod = ignoreCase ? &BmString::_IFindAfter : &BmString::_FindAfter;
-	int32 findLen = strlen(findThis);
+	int32 findLen = (int32)strlen(findThis);
 	
 	if (!replaceWith)
 		replaceWith = "";
 		
-	int32 replaceLen = strlen(replaceWith);
+	int32 replaceLen = (int32)strlen(replaceWith);
 	int32 lastSrcPos = fromOffset;
 	PosVect positions;
 	for(int32 srcPos = 0; 
@@ -2539,7 +2539,7 @@ BmString::Trim( bool left, bool right) {
 			*buf = 0;
 			len = 0;
 		} else {
-			len = end-start;
+			len = (int32)(end - start);
 			if (len>0)
 				memmove( buf, start, len);
 		}

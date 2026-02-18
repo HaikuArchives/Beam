@@ -660,8 +660,8 @@ float BmMailHeaderView::AddFieldViews() {
 		else
 			fs = ThePrefs->GetString( "HeaderListLarge");
 		split( BmPrefs::nListSeparator, fs, fieldList);
-		int numShown = fieldList.size();
-		for( int i=0; i<numShown; ++i) {
+		size_t numShown = fieldList.size();
+		for( size_t i=0; i<numShown; ++i) {
 			BmString field = fieldList[i];
 			field.CapitalizeEachWord();
 			fields.push_back( field);
@@ -781,7 +781,7 @@ float BmMailHeaderView::AddFieldViews() {
 					yPos += fv->Frame().Height();
 					content.Truncate(0);
 				}
-				field.SetTo( start, colonPos-start+1);
+				field.SetTo( start, (int32)(colonPos - start) + 1);
 				start = colonPos+1;
 			}
 			for( ; start<end-1 && (*start==' ' || *start=='\t'); ++start)
@@ -791,7 +791,7 @@ float BmMailHeaderView::AddFieldViews() {
 				start = end+1;
 				continue;
 			}
-			line.SetTo( start, end-start-1);
+			line.SetTo( start, (int32)(end - start) - 1);
 			start = end+1;
 			BmString utf8Line;
 			ConvertToUTF8( BmEncoding::DefaultCharset, line, utf8Line);

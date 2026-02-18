@@ -111,7 +111,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 			// [possibly] new device-number).
 			mEntryRef.device = ThePrefs->MailboxVolume.Device();
 		mNodeRef.device = mEntryRef.device;
-		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
+		mLastModified = FindMsgInt64( archive, MSG_LASTMODIFIED);
 		Key( BM_REFKEY( mNodeRef));
 		mName = mEntryRef.name;
 		if (version > 1)
@@ -169,10 +169,10 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
-		|| archive->AddInt32( MSG_LASTMODIFIED, time(NULL))
+		|| archive->AddInt64( MSG_LASTMODIFIED, (uint64)time(NULL))
 							// bump time to the last time folder-cache has 
 							// been written
-		|| archive->AddInt32( MSG_NUMCHILDREN, size())
+		|| archive->AddInt32( MSG_NUMCHILDREN, (int32)size())
 		|| archive->AddInt32( MSG_MAILCOUNT, mMailCount)
 		|| archive->AddString( MSG_SELECTED_KEY, mSelectedRefKey.String())
 		|| archive->AddBool( MSG_STATEINFO_CONNECTED, 
@@ -257,9 +257,9 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddSpecialFlagForMailRef(const BmString& key) {
-	int32 oldCount = 	mSpecialMailRefSet.size();
+	int32 oldCount = (int32)mSpecialMailRefSet.size();
 	mSpecialMailRefSet.insert(key);
-	int32 offset = mSpecialMailRefSet.size() - oldCount;
+	int32 offset = (int32)mSpecialMailRefSet.size() - oldCount;
 	if (offset) {
 		BmUpdFlags upd = UPD_SPECIAL_COUNT;
 		if (!oldCount)
@@ -277,9 +277,9 @@ void BmMailFolder::AddSpecialFlagForMailRef(const BmString& key) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveSpecialFlagForMailRef(const BmString& key) {
-	int32 oldCount = 	mSpecialMailRefSet.size();
+	int32 oldCount = 	(int32)mSpecialMailRefSet.size();
 	mSpecialMailRefSet.erase(key);
-	int32 offset = mSpecialMailRefSet.size() - oldCount;
+	int32 offset = (int32)mSpecialMailRefSet.size() - oldCount;
 	if (offset) {
 		BmUpdFlags upd = UPD_SPECIAL_COUNT;
 		if (oldCount>0 && mSpecialMailRefSet.empty())

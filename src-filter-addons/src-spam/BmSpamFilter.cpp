@@ -172,8 +172,8 @@ void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector::HtmlRemover
 		} else
 			*dest++ = c;
 	}
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 
 	BM_LOG3( BM_LogMailParse, "html-remover: done");
 }
@@ -372,8 +372,8 @@ void BmSpamFilter::OsbfClassifier
 		}
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogFilter, "feature-filter: done");
 }
 
@@ -425,14 +425,14 @@ status_t BmSpamFilter::OsbfClassifier
 	BM_LOG3( BM_LogFilter, BmString("learning feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
-   mHashpipe.push_front( strnhash( buf, bufLen));
+   mHashpipe.push_front( (uint32)strnhash( buf, bufLen));
    mHashpipe.pop_back();
 
 	int sense = mRevert ? -1 : 1;
 
-	unsigned long hindex;
-	unsigned long h1, h2;
-	unsigned long incrs;
+	uint32 hindex;
+	uint32 h1, h2;
+	uint32 incrs;
 	
 	//
 	//     old Hash polynomial: h0 + 3h1 + 5h2 +11h3 +23h4
@@ -443,7 +443,7 @@ status_t BmSpamFilter::OsbfClassifier
 		h1 = mHashpipe[0] * HashCoeff[0] + mHashpipe[j] * HashCoeff[j << 1];
 		h2 = mHashpipe[0] * HashCoeff[1] + mHashpipe[j] * HashCoeff[(j << 1)-1];
 		
-		hindex = h1 % mHeader->buckets;
+		hindex = h1 % (uint32)mHeader->buckets;
 		
 		//
 		//  we now look at both the primary (h1) and 
@@ -472,7 +472,7 @@ status_t BmSpamFilter::OsbfClassifier
 				Microgroom (mHash, mHeader, hindex);
 				// since things may have moved after a
 				// microgroom, restart our search
-				hindex = h1 % mHeader->buckets;
+				hindex = h1 % (uint32)mHeader->buckets;
 				incrs = 0;
 				continue;
 			};
@@ -590,7 +590,7 @@ BmSpamFilter::OsbfClassifier
       
 	// init basic arrays
 	for (uint32 i = 0; i < MaxHash; i++) {
-		mLearnings[i] = mHeader[i]->learnings;
+		mLearnings[i] = (uint32)mHeader[i]->learnings;
 		//
 		//   increment learnings to avoid division by 0
 		if (mLearnings[i] == 0)
@@ -601,7 +601,7 @@ BmSpamFilter::OsbfClassifier
 		
 		//  set this hashlens to the length in features instead
 		//  of the length in bytes.
-		mHashLen[i] = mHeader[i]->buckets;
+		mHashLen[i] = (uint32)mHeader[i]->buckets;
 		mHashName[i] = (i == 0 ? "Tofu" : "Spam");
 	}
 
@@ -648,12 +648,12 @@ status_t BmSpamFilter::OsbfClassifier
 	BM_LOG3( BM_LogFilter, BmString("classifying feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
-   mHashpipe.push_front( strnhash( buf, bufLen));
+   mHashpipe.push_front( (uint32)strnhash( buf, bufLen));
    mHashpipe.pop_back();
 
 	uint32 j, k;
-	unsigned long hindex;
-	unsigned long h1, h2;
+	uint32 hindex;
+	uint32 h1, h2;
 	// remember indexes of classes with min and max local probabilities
 	uint32 i_min_p, i_max_p;
 	// remember min and max local probabilities of a feature
@@ -690,7 +690,7 @@ status_t BmSpamFilter::OsbfClassifier
 			uint32 lh, lh0;
 			double p_feat = 0;
 			
-			lh = hindex % mHashLen[k];
+			lh = hindex % (uint32)mHashLen[k];
 			lh0 = lh;
 			mHits[k] = 0;
 			
@@ -858,7 +858,7 @@ status_t BmSpamFilter::OsbfClassifier
 		if (already_seen || (max_local_p - min_local_p) < 0.02)
 			continue;
 		// testing speed-up...
-		if (min_local_p > 0 && max_local_p / min_local_p < MinPmaxPminRatio)
+		if (min_local_p > 0 && max_local_p / min_local_p < (double)MinPmaxPminRatio)
 			continue;
 		
 		// code under testing....
@@ -917,7 +917,7 @@ status_t BmSpamFilter::OsbfClassifier
 			// [zooey]: the above is correct for the SA-corpus, but
 			//          with my own corpus, the exact opposite is true >:o/
 			//				As I care less about the SA-corpus, the ratio is deactivated:
-			mPltc[k] = (double) mLearnings[k] / mTotalLearnings *
+			mPltc[k] = (double) mLearnings[k] / (double)mTotalLearnings *
 									(0.5 + confidence_factor *
 //								   ((double) mUniqueFeatures[k] / (double)mTotalFeatures) *
 									((double)mHits[k] / (double)mLearnings[k] - 0.5));
@@ -1009,7 +1009,7 @@ BmSpamFilter::OsbfClassifier
 //     prime numbers, and preferably superincreasing, though both of 
 //     those are not strict requirements.
 //
-const long BmSpamFilter::OsbfClassifier
+const int32 BmSpamFilter::OsbfClassifier
 ::HashCoeff[20] = {
 	1, 7,
 	3, 13,
@@ -1027,15 +1027,15 @@ float BmSpamFilter::OsbfClassifier
 ::FeatureWeight[6] = { 0, 3125, 277, 27, 4, 1 };
 
 /* max feature value */
-const unsigned long BmSpamFilter::OsbfClassifier
+const uint32 BmSpamFilter::OsbfClassifier
 ::WindowLen = 5;
 
 /* max feature value */
-const unsigned long BmSpamFilter::OsbfClassifier
+const uint32 BmSpamFilter::OsbfClassifier
 ::FeatureBucketValueMax = 65535;
 
 /* max number of features */
-const unsigned long BmSpamFilter::OsbfClassifier
+const uint32 BmSpamFilter::OsbfClassifier
 ::DefaultFileLength = 94321;
 
 /* shall we try to do small cleanups automatically, if the hash-chains
@@ -1427,11 +1427,11 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 			}
 		}
 	}
-	msgContext->SetInt32("SpamBuckets", mSpamHeader.buckets);
+	msgContext->SetInt32("SpamBuckets", (int32)mSpamHeader.buckets);
 	msgContext->SetInt32("SpamBucketsUsed", usedBuckets);
-	msgContext->SetInt32("SpamLearnings", mSpamHeader.learnings);
-	msgContext->SetInt32("SpamClassifications", mSpamHeader.classifications);
-	msgContext->SetInt32("SpamMistakes", mSpamHeader.mistakes);
+	msgContext->SetInt32("SpamLearnings", (int32)mSpamHeader.learnings);
+	msgContext->SetInt32("SpamClassifications", (int32)mSpamHeader.classifications);
+	msgContext->SetInt32("SpamMistakes", (int32)mSpamHeader.mistakes);
 	msgContext->SetInt32("SpamChains", numChains);
 	msgContext->SetInt32("SpamChainsMaxLength", maxChain);
 	msgContext->SetInt32("SpamChainsAverageLength", 
@@ -1463,11 +1463,11 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 			}
 		}
 	}
-	msgContext->SetInt32("TofuBuckets", mTofuHeader.buckets);
+	msgContext->SetInt32("TofuBuckets", (int32)mTofuHeader.buckets);
 	msgContext->SetInt32("TofuBucketsUsed", usedBuckets);
-	msgContext->SetInt32("TofuLearnings", mTofuHeader.learnings);
-	msgContext->SetInt32("TofuClassifications", mTofuHeader.classifications);
-	msgContext->SetInt32("TofuMistakes", mTofuHeader.mistakes);
+	msgContext->SetInt32("TofuLearnings", (int32)mTofuHeader.learnings);
+	msgContext->SetInt32("TofuClassifications", (int32)mTofuHeader.classifications);
+	msgContext->SetInt32("TofuMistakes", (int32)mTofuHeader.mistakes);
 	msgContext->SetInt32("TofuChains", numChains);
 	msgContext->SetInt32("TofuChainsMaxLength", maxChain);
 	msgContext->SetInt32("TofuChainsAverageLength", 
@@ -1499,7 +1499,7 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 //
 void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 																Header* header,
-																unsigned long hindex)
+																uint32 hindex)
 {
 	uint32 i, j;
 	uint32 packstart;
@@ -1513,7 +1513,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	
 	//   micropack - start at initial chain start, move to back of 
 	//   chain that overflowed, then scale just that chain.
-	i = j = hindex % header->buckets;
+	i = j = hindex % (uint32)header->buckets;
 	min_value = FeatureBucketValueMax;
 	min_value_any = hash[i].GetValue();
 	while (hash[i].InChain()) {
@@ -1522,7 +1522,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 		if (hash[i].GetValue() < min_value_any)
 			min_value_any = hash[i].GetValue();
 		if (i == 0)
-			i = header->buckets - 1;
+			i = (uint32)header->buckets - 1;
 		else
 			i--;
 		if (i == j)
@@ -1541,7 +1541,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 		i = 0;
 	packstart = i;
 
-	i = j = hindex % header->buckets;
+	i = j = hindex % (uint32)header->buckets;
 	while (hash[i].InChain()) {
 		i++;
 	   if (i == header->buckets)
@@ -1553,7 +1553,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	//     now, our index is right after the last bucket in this chain.
 	packlen = i - packstart;
 	if (packlen < 0)
-		packlen += header->buckets;
+		packlen += (uint32)header->buckets;
 	
 	//   This pruning method zeroes buckets with minimum count in the chain.
 	//   It tries first buckets with minimum distance to their right position,
@@ -1590,9 +1590,9 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 			if (hash[i].GetValue() == min_value	
 			&& (!hash[i].IsLocked() || groom_any)) {
 				// if it is, check the distance
-				distance = i - hash[i].GetHash() % header->buckets;
+				distance = i - hash[i].GetHash() % (uint32)header->buckets;
 				if (distance < 0)
-					distance += header->buckets;
+					distance += (uint32)header->buckets;
 				if (distance < max_distance) {
 					hash[i].SetValue(0);
 					zeroed_countdown--;
@@ -1632,16 +1632,16 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 //    and so it's still below us in the file.
 void BmSpamFilter::OsbfClassifier::PackData( Header* header, 
 														 	FeatureBucket* hash,
-															unsigned long packstart, 
-															unsigned long packlen)
+															uint32 packstart, 
+															uint32 packlen)
 {
 	if (packstart + packlen <= header->buckets) {
 		//  no wraparound in this case
 		PackDataSeg(header, hash, packstart, packlen);
 	} else {
 		//  wraparound mode - do it as two separate repacks
-		PackDataSeg(header, hash, packstart, (header->buckets - packstart));
-		PackDataSeg(header, hash, 0, (packlen - (header->buckets - packstart)));
+		PackDataSeg(header, hash, packstart, ((uint32)header->buckets - packstart));
+		PackDataSeg(header, hash, 0, (packlen - ((uint32)header->buckets - packstart)));
 	}
 }
 
@@ -1651,11 +1651,11 @@ void BmSpamFilter::OsbfClassifier::PackData( Header* header,
 \*------------------------------------------------------------------------------*/
 void BmSpamFilter::OsbfClassifier::PackDataSeg( Header* header, 
 															 	FeatureBucket* hash,
-																unsigned long packstart, 
-																unsigned long packlen)
+																uint32 packstart, 
+																uint32 packlen)
 {
-	unsigned long ifrom, ito;
-	unsigned long thash, tkey;
+	uint32 ifrom, ito;
+	uint32 thash, tkey;
 
 	// Our slot values are now somewhat in disorder because empty
 	// buckets may now have been inserted into a chain where there used
@@ -1668,7 +1668,7 @@ void BmSpamFilter::OsbfClassifier::PackDataSeg( Header* header,
 		tkey = hash[ifrom].GetKey();
 	
 		if (hash[ifrom].GetValue() == 0) {
-			ito = thash % header->buckets;
+			ito = thash % (uint32)header->buckets;
 			while (hash[ito].InChain() && !hash[ito].HashCompare(thash, tkey))
 		   {
 				ito++;
@@ -1720,13 +1720,13 @@ status_t BmSpamFilter::OsbfClassifier::CreateDataFile( const BmString& filename)
 		h.mistakes = 0;
 		h.buckets = bucketCount;
 		// Write header
-		if ((err=file.Write(&h, sizeof (h))) != sizeof(h))
+		if ((err=(status_t)file.Write(&h, sizeof (h))) != sizeof(h))
      		return err < 0 ? err : B_IO_ERROR;
 
 		//  Initialize hashes - zero all buckets
 		void *feature = calloc(bucketCount, sizeof(FeatureBucket));
-		int32 sz = sizeof(FeatureBucket)*bucketCount;
-     	if ((err=file.Write(feature, sz)) != sz)
+		int32 sz = (int32)sizeof(FeatureBucket)*(int32)bucketCount;
+     	if ((err=(status_t)file.Write(feature, sz)) != sz)
      		return err < 0 ? err : B_IO_ERROR;
      	free(feature);
 		BM_LOG( BM_LogFilter, 
@@ -1762,7 +1762,7 @@ status_t BmSpamFilter::OsbfClassifier::ReadDataFile( const BmString& filename,
 		}
 	}
 	// read header
-	if ((err = file.Read(&header, sizeof(header))) < (int32)sizeof(header))
+	if ((err = (status_t)file.Read(&header, sizeof(header))) < (int32)sizeof(header))
 		return err < 0 ? err : B_IO_ERROR;
 	BM_LOG2( BM_LogFilter, 
 			   BmString("Spam-Addon: file has room for ") << header.buckets
@@ -1775,7 +1775,7 @@ status_t BmSpamFilter::OsbfClassifier::ReadDataFile( const BmString& filename,
 	// read hash
 	hash = new FeatureBucket [header.buckets];
 	ssize_t sz = header.buckets * sizeof(FeatureBucket);
-	if ((err = file.Read(hash, sz)) < sz) {
+	if ((err = (status_t)file.Read(hash, sz)) < sz) {
 		BM_LOGERR( BmString("Not enough data in datafile ") << filename);
 		delete hash;
 		hash = NULL;
@@ -1803,11 +1803,11 @@ status_t BmSpamFilter::OsbfClassifier::WriteDataFile( const BmString& filename,
 		return err;
 
 	// write header
-	if ((err = file.Write(&header, sizeof(header))) < (int32)sizeof(header))
+	if ((err = (status_t)file.Write(&header, sizeof(header))) < (int32)sizeof(header))
 		return err < 0 ? err : B_IO_ERROR;
 	// write hash
 	ssize_t sz = header.buckets * sizeof(FeatureBucket);
-	if ((err = file.Write(hash, sz)) < sz) {
+	if ((err = (status_t)file.Write(hash, sz)) < sz) {
 		BM_LOGERR( BmString("Couldn't write data to file ") << filename);
   		return err < 0 ? err : B_IO_ERROR;
 	}
@@ -2096,49 +2096,71 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 	:	inherited( minmax.mini.x, minmax.mini.y, minmax.maxi.x, minmax.maxi.y)
 	,	mCurrFilterAddon( NULL)
 {
+	mThresholdControl = new MSlider( 
+							"Auto-learning threshold:", 0, 40, 1,
+							new BMessage(BM_THRESHOLD_CHANGED),
+							this
+						);
+	mProtectMyTofuControl = new MSlider( 
+							"Tofu (genuine mail) protection:", 0, 25, 1,
+							new BMessage(BM_PROTECTMYTOFU_CHANGED),
+							this
+						);
+	mUnsureThresholdControl = new MSlider( 
+							"Quarantine threshold:", 50, 90, 1,
+							new BMessage(BM_UNSURE_THRESHOLD_CHANGED),
+							this
+						);
+	mShowStatisticsButton = new MButton(
+						"Show statistics" B_UTF8_ELLIPSIS,
+						new BMessage( BM_SHOW_STATISTICS), 
+						this, minimax(-1,-1,-1,-1)
+					);
+	mResetStatisticsButton = new MButton(
+						"Reset statistics" B_UTF8_ELLIPSIS,
+						new BMessage( BM_RESET_STATISTICS),
+						this, minimax(-1,-1,-1,-1)
+					);
+	mTrainButton = new MButton(
+						"Train filter" B_UTF8_ELLIPSIS,
+						new BMessage( BM_TRAIN_FILTER),
+						this, minimax(-1,-1,-1,-1)
+					);
+	mSpamThresholdBar = new BStatusBar( 
+								BRect(), "SpamBar", "Resulting Spam threshold: ", ""
+							);
+	mTofuThresholdBar = new BStatusBar( 
+								BRect(), "TofuBar", "Resulting Tofu threshold: ", ""
+							);
+	mProtectKnownAddrsControl = new BmCheckControl( 
+							"Accept all mails from known addresses as Tofu", 
+							new BMessage(BM_PROTECTKNOWN_CHANGED), 
+							this
+						);
+	mStopProcessingControl = new BmCheckControl( 
+							"Stop processing a message considered Spam",
+							new BMessage(BM_STOP_PROCESSING_CHANGED), 
+							this
+						);
 	HGroup* hgroup = 
 		new HGroup(
 			new VGroup(
 				new MBorder( M_LABELED_BORDER, 5, (char*)"Settings",
-					new VGroup( 
-						mThresholdControl = new MSlider( 
-							"Auto-learning threshold:", 0, 40, 1,
-							new BMessage(BM_THRESHOLD_CHANGED),
-							this
-						),
+					new VGroup(
+						mThresholdControl,
 						new Space(minimax(0, 5, 1e5, 5)),
-						mProtectMyTofuControl = new MSlider( 
-							"Tofu (genuine mail) protection:", 0, 25, 1,
-							new BMessage(BM_PROTECTMYTOFU_CHANGED),
-							this
-						),
+						mProtectMyTofuControl,
 						new Space(minimax(0, 10, 1e5, 10)),
-						mUnsureThresholdControl = new MSlider( 
-							"Quarantine threshold:", 50, 90, 1,
-							new BMessage(BM_UNSURE_THRESHOLD_CHANGED),
-							this
-						),
+						mUnsureThresholdControl,
 						0
 					)
 				),
 				new HGroup(
-					mShowStatisticsButton = new MButton(
-						"Show statistics" B_UTF8_ELLIPSIS,
-						new BMessage( BM_SHOW_STATISTICS), 
-						this, minimax(-1,-1,-1,-1)
-					),
+					mShowStatisticsButton,
 					new Space(minimax(5, 0, 5, 1e5)),
-					mResetStatisticsButton = new MButton(
-						"Reset statistics" B_UTF8_ELLIPSIS,
-						new BMessage( BM_RESET_STATISTICS),
-						this, minimax(-1,-1,-1,-1)
-					),
+					mResetStatisticsButton,
 					new Space(minimax(0, 0, 1e5, 1e5)),
-					mTrainButton = new MButton(
-						"Train filter" B_UTF8_ELLIPSIS,
-						new BMessage( BM_TRAIN_FILTER),
-						this, minimax(-1,-1,-1,-1)
-					),
+					mTrainButton,
 					0
 				),
 				new Space(minimax(0, 0, 1e5, 1e5)),
@@ -2148,15 +2170,11 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				new MBorder( M_LABELED_BORDER, 5, (char*)"Effective Vvlues",
 					new VGroup( 
 						new MBViewWrapper(
-							mSpamThresholdBar = new BStatusBar( 
-								BRect(), "SpamBar", "Resulting Spam threshold: ", ""
-							), 
+							mSpamThresholdBar, 
 							true, false, false
 						),
 						new MBViewWrapper(
-							mTofuThresholdBar = new BStatusBar( 
-								BRect(), "TofuBar", "Resulting Tofu threshold: ", ""
-							), 
+							mTofuThresholdBar, 
 							true, false, false
 						),
 						0
@@ -2164,17 +2182,9 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				),
 				new MBorder( M_LABELED_BORDER, 5, (char*)"Filter actions",
 					new VGroup( 
-						mProtectKnownAddrsControl = new BmCheckControl( 
-							"Accept all mails from known addresses as Tofu", 
-							new BMessage(BM_PROTECTKNOWN_CHANGED), 
-							this
-						),
+						mProtectKnownAddrsControl,
 						new Space(minimax(0, 5, 1e5, 5)),
-						mStopProcessingControl = new BmCheckControl( 
-							"Stop processing a message considered Spam",
-							new BMessage(BM_STOP_PROCESSING_CHANGED), 
-							this
-						),
+						mStopProcessingControl,
 						0
 					)
 				),
@@ -2349,28 +2359,28 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			sprintf(buf,"          SPAM-datafile       |          TOFU-datafile\n");
 			stats << buf;
 			sprintf(buf, 
-					  " features: %6ld (%3ld%% used) | features: %6ld (%3ld%% used)\n",
+					  " features: %6" B_PRId32 " (%3" B_PRId32 "%% used) | features: %6" B_PRId32 " (%3" B_PRId32 "%% used)\n",
 					  spamBuckets, 100*spamBucketsUsed/spamBuckets, 
 					  tofuBuckets, 100*tofuBucketsUsed/tofuBuckets);
 			stats << buf;
 			sprintf(buf, 
-					  " average value:       %6ld  | average value:        %6ld\n",
+					  " average value:       %6" B_PRId32 "  | average value:        %6" B_PRId32 "\n",
 					  spamAverageValue, tofuAverageValue);
 			stats << buf;
 			sprintf(buf, 
-					  " average chain-length: %5ld  | average chain-length:  %5ld\n",
+					  " average chain-length: %5" B_PRId32 "  | average chain-length:  %5" B_PRId32 "\n",
 					  spamChainsAverageLength, tofuChainsAverageLength);
 			stats << buf;
 			sprintf(buf, 
-					  " learnings:           %6ld  | learnings:            %6ld\n",
+					  " learnings:           %6" B_PRId32 "  | learnings:            %6" B_PRId32 "\n",
 					  spamLearnings, tofuLearnings);
 			stats << buf;
 			sprintf(buf, 
-					  " classifications:     %6ld  | classifications:      %6ld\n",
+					  " classifications:     %6" B_PRId32 "  | classifications:      %6" B_PRId32 "\n",
 					  spamClassifications, tofuClassifications);
 			stats << buf;
 			sprintf(buf, 
-					  " mistakes:            %6ld  | mistakes:             %6ld\n",
+					  " mistakes:            %6" B_PRId32 "  | mistakes:             %6" B_PRId32 "\n",
 					  spamMistakes, tofuMistakes);
 			stats << buf;
 			if (spamClassifications || tofuClassifications) {
@@ -2598,14 +2608,14 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 		|| tofuThr != mCurrFilterAddon->D.mTofuThreshold) {
 			mCurrFilterAddon->D.mSpamThreshold = int8(spamThr);
 			mCurrFilterAddon->D.mTofuThreshold = int8(tofuThr);
-			char buf[10];
+			char buf[11];
 			mSpamThresholdBar->Reset("Resulting Spam threshold: ");
 			mSpamThresholdBar->SetMaxValue(50);
-			sprintf(buf, "%lu", spamThr);
+			sprintf(buf, "%" B_PRIu32, spamThr);
 			mSpamThresholdBar->Update(float(spamThr), buf);
 			mTofuThresholdBar->Reset("Resulting Tofu threshold: ");
 			mTofuThresholdBar->SetMaxValue(50);
-			sprintf(buf, "%lu", tofuThr);
+			sprintf(buf, "%" B_PRIu32, tofuThr);
 			mTofuThresholdBar->Update(float(tofuThr), buf);
 			return true;
 		}

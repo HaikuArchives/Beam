@@ -106,7 +106,7 @@ const char* BmImapNestedStringList::_ParseQuotedString(const char* data)
 	const char* start = data;
 	while((c = *data) != '\0') {
 		if (c == '"') {
-			mText.SetTo(start, data - start);
+			mText.SetTo(start, (int32)(data - start));
 			return data + 1;
 		}
 		data++;
@@ -126,7 +126,7 @@ const char* BmImapNestedStringList::_ParseString(const char* data)
 	const char* start = data;
 	while((c = *data) != '\0') {
 		if (c == ' ' || c == ')') {
-			mText.SetTo(start, data - start);
+			mText.SetTo(start, (int32)(data - start));
 			return data;
 		}
 		data++;

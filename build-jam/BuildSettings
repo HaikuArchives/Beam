@@ -81,9 +81,9 @@ rule SetUpSubDirBuildSettings {
 	# warnings settings
 	if $(WARNINGS) != 0 {
 		if $(OSPLAT) = X86 {
-			CCFLAGS += -Wall -Wno-multichar -Wmissing-prototypes 
+			CCFLAGS += -Werror -Wall -Wno-multichar -Wmissing-prototypes
 						  -Wpointer-arith -Wcast-align -Wsign-compare ;
-			C++FLAGS += -Wall -Wno-multichar
+			C++FLAGS += -Werror -Wall -Wno-multichar
 							-Wno-ctor-dtor-privacy -Woverloaded-virtual 
 							-Wconversion -Wpointer-arith
 							-Wcast-align -Wsign-compare -Wno-reorder 

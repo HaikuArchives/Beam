@@ -200,7 +200,7 @@ void BmSmtpAccount::SendPendingMails() {
 	pendingQuery.SetPredicate(pred);
 	pendingQuery.Execute();
 	// only start job if there's actually something to do:
-	uint32 count = pendingQuery.mRefVect.size();
+	uint32 count = (int32)pendingQuery.mRefVect.size();
 	if (count > 0) {
 		BMessage archive(BM_JOBWIN_SMTP);
 		archive.AddString( BmJobModel::MSG_JOB_NAME, Key().String());

@@ -665,8 +665,8 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t outBytesLeft = destLen;
 	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
-	srcLen -= inBytesLeft;
-	destLen -= outBytesLeft;
+	srcLen -= (uint32)inBytesLeft;
+	destLen -= (uint32)outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG)
 			BM_LOG3( BM_LogMailParse, 
@@ -715,7 +715,7 @@ void BmUtf8Decoder::Finalize( char* destBuf, uint32& destLen) {
 	size_t outBytesLeft = destLen;
 	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
-	destLen -= outBytesLeft;
+	destLen -= (uint32)outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG) {
 			BM_LOG3( BM_LogMailParse, 
@@ -844,8 +844,8 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t outBytesLeft = destLen;
 	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
-	srcLen -= inBytesLeft;
-	destLen -= outBytesLeft;
+	srcLen -= (uint32)inBytesLeft;
+	destLen -= (uint32)outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG)
 			BM_LOG3( BM_LogMailParse, 
@@ -1006,8 +1006,8 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			}
 		}
 	}
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "qp-decode: done");
 }
 
@@ -1023,7 +1023,7 @@ void BmQuotedPrintableDecoder::Finalize( char* destBuf, uint32& destLen) {
 		*dest++ = '=';
 		mSoftbreakPending = false;
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 	mIsFinalized = !mSoftbreakPending;
 }
 
@@ -1170,8 +1170,8 @@ void BmQuotedPrintableEncoder::Filter( const char* srcBuf, uint32& srcLen,
 			}
 		}
 	}
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "qp-encode: done");
 }
 
@@ -1196,7 +1196,7 @@ void BmQuotedPrintableEncoder::Finalize( char* destBuf, uint32& destLen) {
 			*dest++ = mQueuedChars.Get();
 		}
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 	mIsFinalized = (mQueuedChars.Length()==0 && mSpacesThatMayNeedEncoding==0);
 }
 
@@ -1411,7 +1411,7 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 		size_t outBytesLeft = conversionBufLen;
 		size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&src), 
 											&srcBytesLeft, &outBuf, &outBytesLeft);
-		mConversionBuf.UnlockBuffer( conversionBufLen - outBytesLeft);
+		mConversionBuf.UnlockBuffer( conversionBufLen - (int32)outBytesLeft);
 		if (irrevCount == (size_t)-1) {
 			if (errno == E2BIG)
 				BM_LOG3( BM_LogMailParse, 
@@ -1444,8 +1444,8 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 		} else
 			mStoppedOnMultibyte = false;
 	}
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "qp-word-encode: done");
 }
 
@@ -1467,7 +1467,7 @@ void BmQpEncodedWordEncoder::Finalize( char* destBuf, uint32& destLen) {
 			*dest++ = mQueuedChars.Get();
 		}
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 	mIsFinalized = (mQueuedChars.Length()==0);
 }
 
@@ -1565,8 +1565,8 @@ void BmFoldedLineEncoder::Filter( const char* srcBuf, uint32& srcLen,
 			mQueuedChars << c;
 		}
 	}
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "line-fold: done");
 }
 
@@ -1583,7 +1583,7 @@ void BmFoldedLineEncoder::Finalize( char* destBuf, uint32& destLen) {
 			*dest++ = mQueuedChars.Get();
 		}
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 	mIsFinalized = (mQueuedChars.Length()==0);
 }
 
@@ -1663,8 +1663,8 @@ void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen,
 			mConcat = mIndex = 0;
 		}
 	}
-	srcLen = src-(unsigned char*)srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - (unsigned char*)srcBuf);
+	destLen = (uint32)(dest - destBuf);
 
 	BM_LOG3( BM_LogMailParse, "base64-decode: done");
 }
@@ -1685,7 +1685,7 @@ void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 			*dest++ = char((mConcat & 0x0000ff00) >> 8);
 		mConcat = mIndex = 0;
 	}
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 	mIsFinalized = true;
 }
 
@@ -1752,8 +1752,8 @@ void BmBase64Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			}
 		}
 	}
-	srcLen = src-(unsigned char*)srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - (unsigned char*)srcBuf);
+	destLen = (uint32)(dest - destBuf);
 
 	BM_LOG3( BM_LogMailParse, "base64-encode: done");
 }
@@ -1779,7 +1779,7 @@ void BmBase64Encoder::Finalize( char* destBuf, uint32& destLen) {
 		}
 	} else
 		mIsFinalized = true;
-	destLen = dest-destBuf;
+	destLen = (uint32)(dest - destBuf);
 }
 
 
@@ -1817,8 +1817,8 @@ void BmLinebreakDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			*dest++ = c;
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "linebreak-decode: done");
 }
 
@@ -1864,8 +1864,8 @@ void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen,
 			*dest++ = c;
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (uint32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "linebreak-encode: done");
 }
 
@@ -1922,8 +1922,8 @@ void BmMailtextCleaner::Filter( const char* srcBuf, uint32& srcLen,
 		}
 	}
 
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
+	srcLen = (uint32)(src - srcBuf);
+	destLen = (int32)(dest - destBuf);
 	BM_LOG3( BM_LogMailParse, "mailtext-cleaner: done");
 }
 

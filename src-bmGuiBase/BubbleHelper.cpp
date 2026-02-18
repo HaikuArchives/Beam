@@ -101,7 +101,7 @@ void BubbleHelper::SetHelp(BView *view, const char *text)
 {
     if (!text)
         DropInfo( view);
-    else if (this && view) {
+    else if (view) {
     	infoLocker->Lock();
     	BubbleInfo* info = FindInfo( view);
     	if (info) {
@@ -116,7 +116,7 @@ void BubbleHelper::SetHelp(BView *view, const char *text)
 
 void BubbleHelper::SetCursor(BView *view, const BCursor* cursor)
 {
-    if (this && view) {
+    if (view) {
     	infoLocker->Lock();
     	BubbleInfo* info = FindInfo( view);
     	if (info) {
@@ -131,7 +131,7 @@ void BubbleHelper::SetCursor(BView *view, const BCursor* cursor)
 
 void BubbleHelper::DropInfo( BView *view)
 {
-    if (this && view) {
+    if (view) {
     	infoLocker->Lock();
     	BubbleInfo* info = FindInfo( view);
     	if (info)
@@ -290,7 +290,7 @@ BView *BubbleHelper::FindView(BPoint where)
 {
     BView *winview=NULL;
     BWindow *win;
-    long windex=0;
+    int32 windex=0;
     while((winview==NULL)&&((win=be_app->WindowAt(windex++))!=NULL))
     {
         if(win!=textwin)
@@ -329,10 +329,10 @@ void BubbleHelper::DisplayHelp(const char *text, BPoint where)
     float height=textview->TextHeight(0,2E6)+4;
     float width=0;
     int numlines=textview->CountLines();
-    int linewidth;
+    float linewidth;
     for(int i=0;i<numlines;i++)
-        if((linewidth=int(textview->LineWidth(i)))>width)
-            width=float(linewidth);
+        if((linewidth=textview->LineWidth(i))>width)
+            width=linewidth;
     textwin->ResizeTo(width+4,height);
     textview->SetTextRect(BRect(2,2,width+2,height+2));
     
