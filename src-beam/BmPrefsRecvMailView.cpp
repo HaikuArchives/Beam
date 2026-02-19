@@ -862,9 +862,10 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_HOME_FOLDER_SELECTED: {
-				BView* srcView = NULL;
-				msg->FindPointer( "source", (void**)&srcView);
-				BMenuItem* item = dynamic_cast<BMenuItem*>( srcView);
+				BMenuItem* item = NULL;
+				void* ptr;
+				if (msg->FindPointer("source", &ptr) == B_OK)
+					item = static_cast<BMenuItem*>(ptr);
 				mHomeFolderControl->ClearMark();
 				if (item) {
 					BMenuItem* currItem = item;
