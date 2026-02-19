@@ -203,7 +203,11 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 		mStatus = FindMsgString( archive, MSG_STATUS);
 		mSubject = FindMsgString( archive, MSG_SUBJECT);
 		mTo = FindMsgString( archive, MSG_TO);
-		mWhen = FindMsgInt64( archive, MSG_WHEN);
+#ifdef __x86_64__
+		mWhen = static_cast<int64>(FindMsgInt32( archive, MSG_WHEN));
+#else
+		mWhen = FindMsgInt32( archive, MSG_WHEN);
+#endif
 
 		if (version >= 2)
 			mIdentity = FindMsgString( archive, MSG_IDENTITY);
@@ -270,7 +274,11 @@ status_t BmMailRef::Archive( BMessage* archive, bool) const {
 		|| archive->AddString( MSG_SUBJECT, mSubject.String())
 		|| archive->AddString( MSG_TO, mTo.String())
 		|| archive->AddString( MSG_IDENTITY, mIdentity.String())
-		|| archive->AddInt64( MSG_WHEN, mWhen)
+#ifdef __x86_64__
+		|| archive->AddInt32( MSG_WHEN, (int32)mWhen)
+#else
+		|| archive->AddInt32( MSG_WHEN, mWhen)
+#endif
 		|| archive->AddString( MSG_CLASSIFICATION, mClassification.String())
 		|| archive->AddFloat( MSG_RATIO_SPAM, mRatioSpam)
 		|| archive->AddString( MSG_IMAP_UID, mImapUID.String());

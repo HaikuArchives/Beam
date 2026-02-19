@@ -111,7 +111,11 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 			// [possibly] new device-number).
 			mEntryRef.device = ThePrefs->MailboxVolume.Device();
 		mNodeRef.device = mEntryRef.device;
-		mLastModified = FindMsgInt64( archive, MSG_LASTMODIFIED);
+#ifdef __x86_64__
+		mLastModified = static_cast<int64>(FindMsgInt32( archive, MSG_LASTMODIFIED));
+#else
+		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
+#endif
 		Key( BM_REFKEY( mNodeRef));
 		mName = mEntryRef.name;
 		if (version > 1)
@@ -169,7 +173,11 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
-		|| archive->AddInt64( MSG_LASTMODIFIED, (uint64)time(NULL))
+#ifdef __x86_64__
+		|| archive->AddInt32( MSG_LASTMODIFIED, (int32)time(NULL))
+#else
+		|| archive->AddInt32( MSG_LASTMODIFIED, time(NULL))
+#endif
 							// bump time to the last time folder-cache has 
 							// been written
 		|| archive->AddInt32( MSG_NUMCHILDREN, (int32)size())
