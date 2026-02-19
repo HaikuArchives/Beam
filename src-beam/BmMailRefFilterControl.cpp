@@ -65,7 +65,8 @@ void BmMailRefFilterControl::MessageReceived(BMessage* msg) {
 						= label != TIME_SPAN_NONE
 							? new BmMailRefFilter(label, numberOfDays)
 							: NULL;
-					mPartnerMailRefView->ApplyModelItemFilter(filter);
+					if (!mPartnerMailRefView->ApplyModelItemFilter(filter))
+						delete filter;
 				}
 				break;
 			}

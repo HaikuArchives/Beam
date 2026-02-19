@@ -1207,7 +1207,10 @@ bool BmListViewController::ApplyModelItemFilter(BmListModelItemFilter* filter)
 	bool result = false;
 	if (LockLooper()) {
 		BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
-		BM_ASSERT(model);
+		if (model == NULL) {
+			UnlockLooper();
+			return result;
+		}
 		model->MarkCacheAsDirty();
 			// we want to bypass the cache, as it may no longer contain all mails
 		model->SetFilter(filter);
