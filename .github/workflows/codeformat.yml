@@ -27,7 +27,7 @@ jobs:
             - name: Run clang-format
               run: |
                   which clang-format-21
-                  find src-* -type f -name "*.cpp" -o -name "*.h"  | xargs clang-format -i
+                  find src-* -type f -name "*.cpp" -o -name "*.h"  | xargs clang-format-21 -i
 
             - uses: stefanzweifel/git-auto-commit-action@v7
               with:
