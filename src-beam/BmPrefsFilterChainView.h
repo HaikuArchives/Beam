@@ -9,6 +9,7 @@
 #ifndef _BmPrefsFilterChainView_h
 #define _BmPrefsFilterChainView_h
 
+#include "BmFilter.h"
 #include "BmFilterChain.h"
 #include "BmListController.h"
 #include "BmPrefsView.h"

@@ -28,6 +28,7 @@
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
 class BFont;
+class BView;
 class ColumnListView;
 class CLVColumn;
 class CLVListItem;
