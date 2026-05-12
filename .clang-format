@@ -1,0 +1,22 @@
+Language: Cpp                                      # single option
+BasedOnStyle: Chromium
+AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+BinPackParameters: true
+ColumnLimit: 100
+LineEnding: LF
+TabWidth: 4
+IndentWidth: 4
+UseTab: Always
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterEnum: false
+  AfterFunction: true
+BreakBeforeBraces: Custom
+AllowShortEnumsOnASingleLine: false
+SeparateDefinitionBlocks: Leave
+MaxEmptyLinesToKeep: 2
+PackConstructorInitializers: Never
+BreakBeforeBinaryOperators: All
+
